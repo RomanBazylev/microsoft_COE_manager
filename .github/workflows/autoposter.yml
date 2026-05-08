@@ -1,0 +1,61 @@
+name: SF Auto-Poster
+
+on:
+  schedule:
+    - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC = 10:00 Warsaw (all channels)
+    - cron: "0 7 * * *"        # Daily 07:00 UTC (meetup-events freshness check)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run — log only, do NOT post to Teams"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  run-autoposter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          TEAMS_WEBHOOK_CERTIFICATION:    ${{ secrets.TEAMS_WEBHOOK_CERTIFICATION }}
+          TEAMS_WEBHOOK_PLAYGROUND:       ${{ secrets.TEAMS_WEBHOOK_PLAYGROUND }}
+          TEAMS_WEBHOOK_SALESFORCE_RSS:   ${{ secrets.TEAMS_WEBHOOK_SALESFORCE_RSS }}
+          TEAMS_WEBHOOK_NEED_HELP:        ${{ secrets.TEAMS_WEBHOOK_NEED_HELP }}
+          TEAMS_WEBHOOK_MEETUP_EVENTS:    ${{ secrets.TEAMS_WEBHOOK_MEETUP_EVENTS }}
+          TEAMS_WEBHOOK_TOPIC_OF_THE_DAY: ${{ secrets.TEAMS_WEBHOOK_TOPIC_OF_THE_DAY }}
+        run: python src/main.py
+
+      - name: Sync log to docs and write run metadata
+        run: |
+          mkdir -p docs
+          cp data/post_log.json docs/post_log.json
+          echo "{\"run_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"trigger\": \"${{ github.event_name }}\", \"dry_run\": \"${{ github.event.inputs.dry_run || 'false' }}\"}" > docs/last_run.json
+
+      - name: Commit data back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/post_log.json data/seen_ids.json docs/post_log.json docs/last_run.json
+          git diff --cached --quiet || git commit -m "bot: update post log [skip ci]"
+          git push
