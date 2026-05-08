@@ -9,7 +9,7 @@ import time
 import requests
 from pathlib import Path
 
-RELEVANCE_THRESHOLD = 0.6
+RELEVANCE_THRESHOLD = 0.5
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -194,13 +194,16 @@ def run(items: list[dict]) -> list[dict]:
 
     scored = [score_item(i) for i in new_items]
     approved = [i for i in scored if i.get("relevance_score", 0) >= RELEVANCE_THRESHOLD]
-    print(f"[Filter] Approved: {len(approved)}/{len(scored)}")
+    rejected = [i for i in scored if i.get("relevance_score", 0) < RELEVANCE_THRESHOLD]
+    print(f"[Filter] Approved: {len(approved)}/{len(scored)} (threshold={RELEVANCE_THRESHOLD})")
+    for i in rejected:
+        print(f"  [SKIP {i['relevance_score']:.2f}] {i['title'][:70]}")
 
     gemini_key = _get_key()
     print(f"[Filter] Gemini: {'enabled' if gemini_key else 'no key — using static comments'}")
 
     for i in approved:
-        print(f"  [{i['relevance_score']:.2f}] {i['title'][:60]}")
+        print(f"  [OK   {i['relevance_score']:.2f}] {i['title'][:60]}")
         if gemini_key and not _gemini_quota_hit:
             ai = _gemini_summary(i)
             if ai:
