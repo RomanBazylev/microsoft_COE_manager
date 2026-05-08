@@ -1,14 +1,22 @@
 """
-filter.py — FREE keyword-based filter for testing.
-No API keys needed. Scores items by matching keywords relevant to each channel.
-
-When ready to switch to AI filtering: set ANTHROPIC_API_KEY in GitHub Secrets
-and replace this file with filter_ai.py (included in the repo).
+filter.py — keyword scoring + optional Gemini AI summaries.
+Gemini runs only if GEMINI_API_KEY is set.
+Any failure (bad key, quota 429, timeout, network) → silent fallback to static comment.
 """
 import json
+import os
+import time
+import requests
 from pathlib import Path
 
-RELEVANCE_THRESHOLD = 0.4  # lower threshold since we use simple scoring
+RELEVANCE_THRESHOLD = 0.4
+
+GEMINI_API_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    "gemini-1.5-flash:generateContent"
+)
+GEMINI_TIMEOUT = 10
+GEMINI_MAX_RETRIES = 1
 
 CHANNEL_KEYWORDS: dict[str, list[str]] = {
     "certification": [
@@ -61,6 +69,82 @@ CHANNEL_COMMENTS: dict[str, str] = {
     "topic-of-the-day": "🔥 Interesting Salesforce topic for today.",
 }
 
+CHANNEL_PROMPTS: dict[str, str] = {
+    "certification":    "certification preparation and Salesforce exam tips",
+    "playground":       "Salesforce developer tools, Apex, LWC, or APIs",
+    "salesforce-rss":   "Salesforce platform news and updates",
+    "need-help":        "solving Salesforce development or admin problems",
+    "meetup-events":    "Salesforce community events and meetups",
+    "topic-of-the-day": "Salesforce release notes or platform updates",
+}
+
+_gemini_key: str | None = None
+_gemini_quota_hit = False
+
+
+def _get_key() -> str | None:
+    global _gemini_key
+    if _gemini_key is None:
+        _gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or None
+    return _gemini_key
+
+
+def _gemini_summary(item: dict) -> str | None:
+    """Call Gemini for a 2-sentence Teams post comment. Returns None on any error."""
+    global _gemini_quota_hit
+    key = _get_key()
+    if not key or _gemini_quota_hit:
+        return None
+
+    channel = item.get("channel", "")
+    topic = CHANNEL_PROMPTS.get(channel, "Salesforce")
+    prompt = (
+        f"You are writing a short Teams message for a Salesforce CoE channel about {topic}.\n"
+        f"Content title: {item.get('title', '')}\n"
+        f"Content snippet: {item.get('summary', '')[:400]}\n"
+        f"Source type: {item.get('source', 'article')}\n\n"
+        f"Write exactly 2 sentences (max 60 words total) that explain why this is useful "
+        f"for a Salesforce developer or admin team. Be specific, no generic filler. "
+        f"No hashtags. No emojis. Plain text only."
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": 120, "temperature": 0.4},
+    }
+
+    for attempt in range(GEMINI_MAX_RETRIES + 1):
+        try:
+            resp = requests.post(
+                GEMINI_API_URL, params={"key": key}, json=payload, timeout=GEMINI_TIMEOUT
+            )
+            if resp.status_code == 429:
+                print("[Gemini] Quota exceeded — fallback for this run")
+                _gemini_quota_hit = True
+                return None
+            if resp.status_code in (400, 403):
+                print(f"[Gemini] HTTP {resp.status_code} — check API key settings")
+                return None
+            if not resp.ok:
+                print(f"[Gemini] HTTP {resp.status_code} — skipping")
+                return None
+            data = resp.json()
+            text = (
+                data.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+                .strip()
+            )
+            return text or None
+        except requests.exceptions.Timeout:
+            print(f"[Gemini] Timeout (attempt {attempt + 1}) — skipping")
+            if attempt < GEMINI_MAX_RETRIES:
+                time.sleep(1)
+        except Exception as e:
+            print(f"[Gemini] Error: {e} — skipping")
+            return None
+    return None
+
 
 def score_item(item: dict) -> dict:
     channel = item.get("channel", "")
@@ -82,13 +166,12 @@ def score_item(item: dict) -> dict:
         if release_matches > 0:
             score = min(score + 0.3, 1.0)
 
-    comment = CHANNEL_COMMENTS.get(channel, "🔗 Check this out!")
-
     return {
         **item,
         "relevance_score": round(score, 2),
         "reason": f"Matched {matches} channel keywords, {generic_matches} generic SF keywords",
-        "suggested_comment": comment,
+        "suggested_comment": CHANNEL_COMMENTS.get(channel, "🔗 Check this out!"),
+        "ai_summary": None,
     }
 
 
@@ -113,8 +196,17 @@ def run(items: list[dict]) -> list[dict]:
     approved = [i for i in scored if i.get("relevance_score", 0) >= RELEVANCE_THRESHOLD]
     print(f"[Filter] Approved: {len(approved)}/{len(scored)}")
 
+    gemini_key = _get_key()
+    print(f"[Filter] Gemini: {'enabled' if gemini_key else 'no key — using static comments'}")
+
     for i in approved:
         print(f"  [{i['relevance_score']:.2f}] {i['title'][:60]}")
+        if gemini_key and not _gemini_quota_hit:
+            ai = _gemini_summary(i)
+            if ai:
+                i["suggested_comment"] = ai
+                i["ai_summary"] = ai
+                print(f"         AI: {ai[:80]}...")
 
     new_seen = {i["id"] for i in new_items}
     save_seen_ids(seen_ids | new_seen)
