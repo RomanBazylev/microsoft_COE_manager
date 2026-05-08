@@ -1,105 +1,169 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SF COE Auto-Poster — Dashboard</title>
+  <title>SF CoE Auto-Poster — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:#0d0f12; --surface:#13171d; --surface2:#1a1f28; --border:#242a35;
-      --accent:#00c4ff; --accent2:#7c5cfc; --green:#00e676; --amber:#ffb300;
-      --red:#ff5252; --text:#d4dbe8; --muted:#5a6478;
-      --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+    :root { --sans:'Inter',sans-serif; --mono:'JetBrains Mono',monospace; --r:10px; }
+
+    html[data-theme="light"] {
+      --bg:#f0f4f8; --surface:#fff; --surface2:#f8fafc; --border:#e2e8f0;
+      --text:#0f172a; --text2:#334155; --muted:#94a3b8;
+      --accent:#0176d3; --accent-bg:#e8f4fd;
+      --green:#15803d; --green-bg:#dcfce7;
+      --red:#dc2626;   --red-bg:#fee2e2;
+      --amber:#d97706; --amber-bg:#fef3c7;
+      --purple:#7c3aed;--purple-bg:#ede9fe;
+      --sh:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+      --sh-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+      --hdr:rgba(255,255,255,.9);
     }
-    body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.6; min-height:100vh; }
-    header { border-bottom:1px solid var(--border); padding:0 32px; display:flex; align-items:center; gap:16px; height:56px; position:sticky; top:0; background:var(--bg); z-index:100; }
-    .logo { font-family:var(--mono); font-size:13px; color:var(--accent); letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
-    .logo span { color:var(--muted); }
-    header .spacer { flex:1; }
-    #last-run { font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; }
-    .live-dot { width:6px; height:6px; background:var(--green); border-radius:50%; display:inline-block; margin-right:6px; box-shadow:0 0 6px var(--green); animation:pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    #btn-run { display:flex; align-items:center; gap:6px; background:var(--accent); color:#000; border:none; padding:6px 14px; border-radius:6px; font-family:var(--mono); font-size:12px; font-weight:500; cursor:pointer; transition:opacity .15s; white-space:nowrap; }
-    #btn-run:hover { opacity:.85; }
-    #btn-run:disabled { opacity:.4; cursor:not-allowed; }
-    #btn-token { background:transparent; border:1px solid var(--border); color:var(--muted); padding:6px 10px; border-radius:6px; font-family:var(--mono); font-size:11px; cursor:pointer; transition:border-color .15s; }
-    #btn-token:hover { border-color:var(--accent); color:var(--accent); }
-    #toast { position:fixed; bottom:24px; right:24px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 18px; font-family:var(--mono); font-size:12px; opacity:0; transform:translateY(8px); transition:opacity .2s,transform .2s; z-index:999; pointer-events:none; }
-    #toast.show { opacity:1; transform:translateY(0); }
-    #toast.ok { border-color:var(--green); color:var(--green); }
-    #toast.err { border-color:var(--red); color:var(--red); }
-    .container { max-width:1280px; margin:0 auto; padding:28px 24px; }
-    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:28px; }
-    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 20px; }
-    .stat-card .label { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-    .stat-card .value { font-family:var(--mono); font-size:28px; font-weight:500; color:var(--accent); line-height:1; }
-    .stat-card .value.green { color:var(--green); }
-    .stat-card .value.red   { color:var(--red); }
-    .stat-card .value.amber { color:var(--amber); }
-    .stat-card .value.purple { color:var(--accent2); }
-    .stat-card .sub { font-size:11px; color:var(--muted); margin-top:4px; }
-    .section-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
-    .section-title { font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
-    .section-header hr { flex:1; border:none; border-top:1px solid var(--border); }
-    .filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+    html[data-theme="dark"] {
+      --bg:#0d0f12; --surface:#13171d; --surface2:#1a1f28; --border:#242a35;
+      --text:#e2e8f0; --text2:#94a3b8; --muted:#4a5568;
+      --accent:#38bdf8; --accent-bg:#0c2d42;
+      --green:#34d399;  --green-bg:#052e1f;
+      --red:#f87171;    --red-bg:#2d0505;
+      --amber:#fbbf24;  --amber-bg:#2d1f05;
+      --purple:#a78bfa; --purple-bg:#1e1040;
+      --sh:0 1px 3px rgba(0,0,0,.4);
+      --sh-md:0 4px 12px rgba(0,0,0,.5);
+      --hdr:rgba(13,15,18,.9);
+    }
+
+    .ch-certification    { --cc:#0176d3; --cb:#e8f4fd; }
+    .ch-playground       { --cc:#7c3aed; --cb:#ede9fe; }
+    .ch-salesforce-rss   { --cc:#15803d; --cb:#dcfce7; }
+    .ch-need-help        { --cc:#d97706; --cb:#fef3c7; }
+    .ch-meetup-events    { --cc:#dc2626; --cb:#fee2e2; }
+    .ch-topic-of-the-day { --cc:#0891b2; --cb:#e0f2fe; }
+    html[data-theme="dark"] .ch-certification    { --cc:#38bdf8; --cb:#0c2d42; }
+    html[data-theme="dark"] .ch-playground       { --cc:#a78bfa; --cb:#1e1040; }
+    html[data-theme="dark"] .ch-salesforce-rss   { --cc:#34d399; --cb:#052e1f; }
+    html[data-theme="dark"] .ch-need-help        { --cc:#fbbf24; --cb:#2d1f05; }
+    html[data-theme="dark"] .ch-meetup-events    { --cc:#f87171; --cb:#2d0505; }
+    html[data-theme="dark"] .ch-topic-of-the-day { --cc:#67e8f9; --cb:#082937; }
+    body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.6; min-height:100vh; transition:background .2s,color .2s; }
+
+    header { position:sticky; top:0; z-index:100; background:var(--hdr); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border); padding:0 32px; height:62px; display:flex; align-items:center; gap:12px; box-shadow:var(--sh); }
+    .logo-icon { width:36px; height:36px; border-radius:9px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .logo-text { font-size:15px; font-weight:700; color:var(--text); letter-spacing:-.02em; }
+    .logo-sub  { font-size:11px; color:var(--muted); letter-spacing:.04em; }
+    .hdr-space { flex:1; }
+    .live-wrap { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+    .live-dot  { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px var(--green-bg); animation:pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:none; font-family:var(--sans); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .btn-primary { background:var(--accent); color:#fff; box-shadow:var(--sh); }
+    .btn-primary:hover { opacity:.9; transform:translateY(-1px); box-shadow:var(--sh-md); }
+    .btn-primary:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+    .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+    .btn-icon { width:36px; height:36px; padding:0; border-radius:8px; justify-content:center; font-size:16px; }
+
+    .container { max-width:1300px; margin:0 auto; padding:32px 24px; }
+    .section-hdr { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    .section-title { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+    .section-hdr hr { flex:1; border:none; border-top:1px solid var(--border); }
+
+    .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:16px; margin-bottom:32px; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:22px 20px 18px; box-shadow:var(--sh); position:relative; overflow:hidden; transition:box-shadow .2s,transform .2s; }
+    .stat-card:hover { box-shadow:var(--sh-md); transform:translateY(-2px); }
+    .stat-top { position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--r) var(--r) 0 0; }
+    .stat-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:19px; margin-bottom:16px; }
+    .stat-val { font-size:36px; font-weight:700; line-height:1; letter-spacing:-.04em; color:var(--text); margin-bottom:5px; }
+    .stat-val.sm { font-size:22px; line-height:1.2; }
+    .stat-lbl { font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+    .stat-sub { font-size:11px; color:var(--muted); margin-top:5px; line-height:1.4; }
+    .c-blue{color:var(--accent);} .c-green{color:var(--green);} .c-red{color:var(--red);} .c-amber{color:var(--amber);} .c-purple{color:var(--purple);}
+    .bg-blue{background:var(--accent-bg);} .bg-green{background:var(--green-bg);} .bg-red{background:var(--red-bg);} .bg-amber{background:var(--amber-bg);} .bg-purple{background:var(--purple-bg);}
+
+    .ch-bars-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:20px 24px; box-shadow:var(--sh); margin-bottom:32px; display:grid; grid-template-columns:1fr 1fr; gap:12px 56px; }
+    .ch-bar-row { display:flex; align-items:center; gap:12px; }
+    .ch-bar-lbl { font-size:12px; font-weight:600; width:128px; flex-shrink:0; }
+    .ch-bar-track { flex:1; height:8px; background:var(--surface2); border-radius:4px; overflow:hidden; border:1px solid var(--border); }
+    .ch-bar-fill  { height:100%; border-radius:4px; transition:width .7s cubic-bezier(.4,0,.2,1); }
+    .ch-bar-cnt { font-size:12px; font-weight:600; color:var(--muted); width:28px; text-align:right; flex-shrink:0; font-family:var(--mono); }
+
+    .ch-badge { display:inline-flex; align-items:center; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; white-space:nowrap; background:var(--cb,#eee); color:var(--cc,#333); }
+    .ch-badge::before { content:'#'; opacity:.55; margin-right:1px; }
+
+    .filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
     .filter-group { display:flex; gap:4px; flex-wrap:wrap; }
-    .chip { padding:4px 10px; border-radius:20px; border:1px solid var(--border); font-family:var(--mono); font-size:11px; color:var(--muted); cursor:pointer; transition:all .15s; background:transparent; white-space:nowrap; }
-    .chip:hover { border-color:var(--accent); color:var(--accent); }
-    .chip.active { background:var(--accent); color:#000; border-color:var(--accent); }
-    .filter-sep { width:1px; background:var(--border); margin:0 4px; }
-    .table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+    .chip { padding:5px 13px; border-radius:20px; border:1px solid var(--border); font-size:12px; font-weight:500; color:var(--muted); cursor:pointer; transition:all .15s; background:transparent; white-space:nowrap; }
+    .chip:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+    .chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    html[data-theme="dark"] .chip.active { color:#0d0f12; }
+    .filter-sep { width:1px; height:22px; background:var(--border); margin:0 4px; align-self:center; }
+
+    .table-wrap { border:1px solid var(--border); border-radius:var(--r); overflow:hidden; box-shadow:var(--sh); background:var(--surface); }
     table { width:100%; border-collapse:collapse; }
-    thead th { padding:10px 14px; text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); white-space:nowrap; background:var(--surface); }
+    thead th { padding:11px 16px; text-align:left; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); background:var(--surface2); white-space:nowrap; }
     tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
     tbody tr:last-child { border-bottom:none; }
     tbody tr:hover { background:var(--surface2); }
-    td { padding:10px 14px; vertical-align:top; }
-    .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-family:var(--mono); font-size:11px; font-weight:500; white-space:nowrap; }
-    .badge-posted { background:rgba(0,230,118,.12); color:var(--green); }
-    .badge-failed { background:rgba(255,82,82,.12); color:var(--red); }
-    .badge-dry    { background:rgba(255,179,0,.12); color:var(--amber); }
-    .channel-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-family:var(--mono); font-size:11px; white-space:nowrap; }
-    .ch-certification    { background:rgba(0,196,255,.12); color:var(--accent); }
-    .ch-playground       { background:rgba(124,92,252,.12); color:var(--accent2); }
-    .ch-salesforce-rss   { background:rgba(0,230,118,.12); color:var(--green); }
-    .ch-need-help        { background:rgba(255,179,0,.12); color:var(--amber); }
-    .ch-meetup-events    { background:rgba(255,82,82,.12); color:var(--red); }
-    .ch-topic-of-the-day { background:rgba(180,180,255,.12); color:#b4b4ff; }
-    .source-badge { display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--muted); }
-    .title-cell a { color:var(--text); text-decoration:none; }
+    td { padding:11px 16px; vertical-align:top; }
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:6px; font-size:11px; font-weight:600; white-space:nowrap; }
+    .badge-posted { background:var(--green-bg); color:var(--green); }
+    .badge-failed { background:var(--red-bg);   color:var(--red); }
+    .badge-dry    { background:var(--amber-bg); color:var(--amber); }
+    .src-tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:5px; font-size:11px; font-weight:600; background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+    .src-tag.yt { color:var(--red); background:var(--red-bg); border-color:transparent; }
+    .title-cell a { color:var(--text); text-decoration:none; font-weight:500; }
     .title-cell a:hover { color:var(--accent); }
-    .title-cell .domain { font-size:11px; color:var(--muted); margin-top:2px; }
-    .error-msg { font-family:var(--mono); font-size:11px; color:var(--red); margin-top:4px; }
-    .score-bar { display:flex; align-items:center; gap:6px; }
-    .score-track { width:52px; height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
-    .score-fill { height:100%; border-radius:2px; background:var(--accent); }
-    .score-fill.hi { background:var(--green); }
-    .score-fill.lo { background:var(--amber); }
-    .score-num { font-family:var(--mono); font-size:11px; color:var(--muted); }
-    .ts { font-family:var(--mono); font-size:11px; color:var(--muted); white-space:nowrap; }
-    .empty-state { text-align:center; padding:48px 24px; color:var(--muted); font-family:var(--mono); font-size:13px; }
-    .sources-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:8px; }
-    .source-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 16px; display:flex; align-items:flex-start; gap:12px; }
-    .source-icon { font-size:16px; margin-top:2px; flex-shrink:0; }
-    .source-info { flex:1; min-width:0; }
-    .source-domain { font-family:var(--mono); font-size:12px; color:var(--text); }
-    .source-channels { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-    .source-status { font-family:var(--mono); font-size:10px; margin-top:4px; }
-    .source-status.ok    { color:var(--green); }
-    .source-status.stale { color:var(--amber); }
-    @media(max-width:700px) { header{padding:0 16px;gap:10px;} .container{padding:16px 12px;} .stats{grid-template-columns:repeat(2,1fr);} }
+    .title-meta { font-size:11px; color:var(--muted); margin-top:3px; display:flex; align-items:center; gap:6px; }
+    .err-msg { font-size:11px; color:var(--red); margin-top:3px; font-family:var(--mono); }
+    .score-bar { display:flex; align-items:center; gap:8px; }
+    .score-track { width:52px; height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; border:1px solid var(--border); }
+    .score-fill { height:100%; border-radius:3px; }
+    .score-hi { background:var(--green); } .score-md { background:var(--accent); } .score-lo { background:var(--amber); }
+    .score-num { font-size:11px; font-weight:600; color:var(--muted); font-family:var(--mono); }
+    .ts { font-size:11px; color:var(--muted); white-space:nowrap; font-family:var(--mono); }
+    .empty-state { text-align:center; padding:56px 24px; color:var(--muted); font-size:13px; }
+
+    .sources-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; }
+    .source-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px; display:flex; align-items:flex-start; gap:12px; box-shadow:var(--sh); transition:box-shadow .15s,transform .15s; }
+    .source-card:hover { box-shadow:var(--sh-md); transform:translateY(-1px); }
+    .src-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; font-family:var(--mono); }
+    .src-icon.rss { background:var(--accent-bg); color:var(--accent); }
+    .src-icon.yt  { background:var(--red-bg); color:var(--red); }
+    .src-domain { font-size:13px; font-weight:500; color:var(--text); }
+    .src-channels { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .src-status { font-size:11px; font-weight:500; margin-top:6px; }
+    .src-status.ok { color:var(--green); } .src-status.stale { color:var(--muted); }
+
+    #toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 18px; font-size:13px; box-shadow:var(--sh-md); opacity:0; transform:translateY(8px); transition:opacity .2s,transform .2s; z-index:999; pointer-events:none; }
+    #toast.show { opacity:1; transform:translateY(0); }
+    #toast.ok  { border-color:var(--green); color:var(--green); }
+    #toast.err { border-color:var(--red);   color:var(--red); }
+
+    @media(max-width:1100px) { .stats { grid-template-columns:repeat(3,1fr); } }
+    @media(max-width:700px) {
+      header { padding:0 16px; } .logo-sub { display:none; }
+      .container { padding:16px 12px; }
+      .stats { grid-template-columns:repeat(2,1fr); }
+      .ch-bars-card { grid-template-columns:1fr; }
+      #last-run-text { display:none; }
+    }
   </style>
 </head>
 <body>
 <header>
-  <div class="logo">SF COE <span>/</span> Auto-Poster</div>
-  <div class="spacer"></div>
-  <div id="last-run"><span class="live-dot"></span>Loading...</div>
-  <button id="btn-run" onclick="runNow()">&#9654; Run Now</button>
-  <button id="btn-token" onclick="resetToken()" title="Set / reset GitHub PAT">&#128273;</button>
+  <div class="logo-icon">⚡</div>
+  <div>
+    <div class="logo-text">SF CoE Auto-Poster</div>
+    <div class="logo-sub">Microsoft Teams · Content Automation</div>
+  </div>
+  <div class="hdr-space"></div>
+  <div class="live-wrap"><span class="live-dot"></span><span id="last-run-text">Loading…</span></div>
+  <button class="btn btn-ghost btn-icon" id="btn-theme" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  <button class="btn btn-ghost btn-icon" onclick="resetToken()" title="Set GitHub PAT">🔑</button>
+  <button class="btn btn-primary" id="btn-run" onclick="runNow()">▶ Run Now</button>
 </header>
 
 <div id="toast"></div>
@@ -107,21 +171,54 @@
 <div class="container">
 
   <div class="stats">
-    <div class="stat-card"><div class="label">Total Posted</div><div class="value" id="stat-total">-</div></div>
-    <div class="stat-card"><div class="label">This Week</div><div class="value green" id="stat-week">-</div></div>
-    <div class="stat-card"><div class="label">Failed</div><div class="value red" id="stat-failed">-</div></div>
-    <div class="stat-card"><div class="label">Success Rate</div><div class="value" id="stat-rate">-</div></div>
-    <div class="stat-card"><div class="label">Channels</div><div class="value purple" id="stat-channels">-</div><div class="sub" id="stat-channels-list"></div></div>
-    <div class="stat-card"><div class="label">Last Post</div><div class="value amber" style="font-size:16px;line-height:1.3" id="stat-last">-</div></div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--accent)"></div>
+      <div class="stat-icon bg-blue">📬</div>
+      <div class="stat-val c-blue" id="stat-total">—</div>
+      <div class="stat-lbl">Total Posted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--green)"></div>
+      <div class="stat-icon bg-green">📅</div>
+      <div class="stat-val c-green" id="stat-week">—</div>
+      <div class="stat-lbl">This Week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--accent)"></div>
+      <div class="stat-icon bg-blue">📊</div>
+      <div class="stat-val" id="stat-rate">—</div>
+      <div class="stat-lbl">Success Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--red)"></div>
+      <div class="stat-icon bg-red">⚠️</div>
+      <div class="stat-val c-red" id="stat-failed">—</div>
+      <div class="stat-lbl">Failed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--purple)"></div>
+      <div class="stat-icon bg-purple">💬</div>
+      <div class="stat-val c-purple" id="stat-channels">—</div>
+      <div class="stat-lbl">Active Channels</div>
+      <div class="stat-sub" id="stat-channels-list"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top" style="background:var(--amber)"></div>
+      <div class="stat-icon bg-amber">🕐</div>
+      <div class="stat-val c-amber sm" id="stat-last">—</div>
+      <div class="stat-lbl">Last Post</div>
+    </div>
   </div>
 
-  <div class="section-header"><span class="section-title">Post Log</span><hr /></div>
+  <div class="section-hdr"><span class="section-title">Channel Activity</span><hr /></div>
+  <div class="ch-bars-card" id="ch-bars"></div>
 
+  <div class="section-hdr"><span class="section-title">Post Log</span><hr /></div>
   <div class="filters" id="filter-bar">
     <div class="filter-group" id="filter-status">
-      <button class="chip active" data-group="status" data-val="all">All</button>
-      <button class="chip" data-group="status" data-val="posted">&#10003; Posted</button>
-      <button class="chip" data-group="status" data-val="failed">&#10007; Failed</button>
+      <button class="chip active" data-group="status" data-val="all">All Status</button>
+      <button class="chip" data-group="status" data-val="posted">✓ Posted</button>
+      <button class="chip" data-group="status" data-val="failed">✕ Failed</button>
       <button class="chip" data-group="status" data-val="dry-run">Dry-run</button>
     </div>
     <div class="filter-sep"></div>
@@ -145,13 +242,13 @@
   <div class="table-wrap">
     <table>
       <thead><tr>
-        <th>Status</th><th>Channel</th><th>Source</th><th>Title</th><th>Score</th><th>Posted At</th>
+        <th>Status</th><th>Channel</th><th>Title &amp; Source</th><th>Score</th><th>Posted</th>
       </tr></thead>
-      <tbody id="log-body"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+      <tbody id="log-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
     </table>
   </div>
 
-  <div class="section-header" style="margin-top:36px"><span class="section-title">Content Sources</span><hr /></div>
+  <div class="section-hdr" style="margin-top:36px"><span class="section-title">Content Sources</span><hr /></div>
   <div class="sources-grid" id="sources-grid"></div>
 
 </div>
@@ -162,182 +259,198 @@ var REPO_NAME   = 'microsoft_COE_manager';
 var WORKFLOW_ID = 'autoposter.yml';
 var LOG_URL     = './post_log.json';
 var PAT_KEY     = 'sf_coe_gh_pat';
+var THEME_KEY   = 'sf_coe_theme';
 
+var CHANNELS = ['certification','playground','salesforce-rss','need-help','meetup-events','topic-of-the-day'];
+var CH_CSS = {
+  'certification':'ch-certification','playground':'ch-playground',
+  'salesforce-rss':'ch-salesforce-rss','need-help':'ch-need-help',
+  'meetup-events':'ch-meetup-events','topic-of-the-day':'ch-topic-of-the-day'
+};
+var CH_COLOR_LIGHT = {
+  'certification':'#0176d3','playground':'#7c3aed','salesforce-rss':'#15803d',
+  'need-help':'#d97706','meetup-events':'#dc2626','topic-of-the-day':'#0891b2'
+};
+var CH_COLOR_DARK = {
+  'certification':'#38bdf8','playground':'#a78bfa','salesforce-rss':'#34d399',
+  'need-help':'#fbbf24','meetup-events':'#f87171','topic-of-the-day':'#67e8f9'
+};
 var SOURCES = [
-  {domain:'salesforce.com/blog (certifications)',icon:'RSS',type:'rss',channels:['certification']},
-  {domain:'salesforce.com/blog',icon:'RSS',type:'rss',channels:['salesforce-rss','topic-of-the-day']},
-  {domain:'salesforce.com/blog (events)',icon:'RSS',type:'rss',channels:['meetup-events']},
-  {domain:'focusonforce.com',icon:'RSS',type:'rss',channels:['certification']},
-  {domain:'sfdc99.com',icon:'RSS',type:'rss',channels:['certification']},
-  {domain:'salesforceben.com',icon:'RSS',type:'rss',channels:['certification','salesforce-rss','topic-of-the-day']},
-  {domain:'adminhero.com',icon:'RSS',type:'rss',channels:['certification']},
-  {domain:'andyinthecloud.com',icon:'RSS',type:'rss',channels:['playground']},
-  {domain:'unofficialsf.com',icon:'RSS',type:'rss',channels:['playground']},
-  {domain:'reddit.com/r/salesforcedev',icon:'RSS',type:'rss',channels:['playground']},
-  {domain:'reddit.com/r/salesforce',icon:'RSS',type:'rss',channels:['need-help']},
-  {domain:'salesforce.stackexchange.com',icon:'RSS',type:'rss',channels:['need-help']},
-  {domain:'automationchampion.com',icon:'RSS',type:'rss',channels:['salesforce-rss','topic-of-the-day']},
-  {domain:'youtube.com (SF Admins)',icon:'YT',type:'youtube',channels:['certification']},
-  {domain:'youtube.com (SF Developers)',icon:'YT',type:'youtube',channels:['playground']},
+  {d:'salesforce.com/blog (certifications)',t:'rss',ch:['certification']},
+  {d:'salesforce.com/blog',t:'rss',ch:['salesforce-rss','topic-of-the-day']},
+  {d:'salesforce.com/blog (events)',t:'rss',ch:['meetup-events']},
+  {d:'focusonforce.com',t:'rss',ch:['certification']},
+  {d:'sfdc99.com',t:'rss',ch:['certification']},
+  {d:'salesforceben.com',t:'rss',ch:['certification','salesforce-rss','topic-of-the-day']},
+  {d:'adminhero.com',t:'rss',ch:['certification']},
+  {d:'andyinthecloud.com',t:'rss',ch:['playground']},
+  {d:'unofficialsf.com',t:'rss',ch:['playground']},
+  {d:'reddit.com/r/salesforcedev',t:'rss',ch:['playground']},
+  {d:'reddit.com/r/salesforce',t:'rss',ch:['need-help']},
+  {d:'salesforce.stackexchange.com',t:'rss',ch:['need-help']},
+  {d:'automationchampion.com',t:'rss',ch:['salesforce-rss','topic-of-the-day']},
+  {d:'youtube.com (SF Admins)',t:'youtube',ch:['certification']},
+  {d:'youtube.com (SF Developers)',t:'youtube',ch:['playground']}
 ];
 
-var CHANNEL_CSS = {
-  'certification':'ch-certification',
-  'playground':'ch-playground',
-  'salesforce-rss':'ch-salesforce-rss',
-  'need-help':'ch-need-help',
-  'meetup-events':'ch-meetup-events',
-  'topic-of-the-day':'ch-topic-of-the-day',
-};
-
 var allItems = [];
-var filters = {status:'all',source:'all',channel:'all'};
+var filters  = {status:'all',source:'all',channel:'all'};
 
-async function loadLog() {
+(function(){
+  var t = localStorage.getItem(THEME_KEY) || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btn-theme').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+
+function toggleTheme(){
+  var cur  = document.documentElement.getAttribute('data-theme');
+  var next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(THEME_KEY, next);
+  document.getElementById('btn-theme').textContent = next === 'dark' ? '☀️' : '🌙';
+  renderChannelBars();
+}
+
+async function loadLog(){
   try {
     var r = await fetch(LOG_URL + '?t=' + Date.now());
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    var raw = await r.json();
-    allItems = raw.slice().reverse();
-    renderStats();
-    renderTable();
-    renderSources();
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    allItems = (await r.json()).slice().reverse();
+    renderStats(); renderChannelBars(); renderTable(); renderSources();
   } catch(e) {
     document.getElementById('log-body').innerHTML =
-      '<tr><td colspan="6" class="empty-state">Could not load post_log.json: ' + e.message + '</td></tr>';
-    document.getElementById('last-run').innerHTML = '<span class="live-dot"></span>No data';
+      '<tr><td colspan="5" class="empty-state">Could not load post_log.json — ' + esc(e.message) + '</td></tr>';
+    document.getElementById('last-run-text').textContent = 'No data';
   }
 }
 
-function renderStats() {
-  var posted  = allItems.filter(function(i){return i.status==='posted';});
-  var failed  = allItems.filter(function(i){return i.status==='failed';});
-  var total   = posted.length + failed.length;
-  var rate    = total > 0 ? Math.round(posted.length/total*100) : 0;
-  var weekAgo = Date.now() - 7*86400000;
-  var week    = posted.filter(function(i){return new Date(i.posted_at).getTime() > weekAgo;}).length;
-  var channels = [];
-  posted.forEach(function(i){ if(channels.indexOf(i.channel)<0) channels.push(i.channel); });
-  var lastItem = allItems.find(function(i){return i.posted_at;});
+function renderStats(){
+  var posted = allItems.filter(function(i){return i.status==='posted';});
+  var failed = allItems.filter(function(i){return i.status==='failed';});
+  var total  = posted.length + failed.length;
+  var rate   = total > 0 ? Math.round(posted.length/total*100) : 0;
+  var week   = posted.filter(function(i){return new Date(i.posted_at).getTime() > Date.now()-7*86400000;}).length;
+  var chs=[];
+  posted.forEach(function(i){if(chs.indexOf(i.channel)<0) chs.push(i.channel);});
+  var last = allItems.find(function(i){return i.posted_at;});
   document.getElementById('stat-total').textContent    = posted.length;
   document.getElementById('stat-week').textContent     = week;
   document.getElementById('stat-failed').textContent   = failed.length;
-  document.getElementById('stat-rate').textContent     = total > 0 ? rate + '%' : '-';
-  document.getElementById('stat-channels').textContent = channels.length;
-  document.getElementById('stat-channels-list').textContent = channels.map(function(c){return '#'+c;}).join(', ');
-  document.getElementById('stat-last').textContent     = lastItem ? relTime(lastItem.posted_at) : '-';
-  var lastFull = lastItem ? new Date(lastItem.posted_at).toUTCString() : 'never';
-  document.getElementById('last-run').innerHTML = '<span class="live-dot"></span>Last run: ' + lastFull;
+  document.getElementById('stat-rate').textContent     = total > 0 ? rate+'%' : '—';
+  document.getElementById('stat-channels').textContent = chs.length;
+  document.getElementById('stat-channels-list').textContent = chs.map(function(c){return '#'+c;}).join(' · ');
+  document.getElementById('stat-last').textContent     = last ? relTime(last.posted_at) : '—';
+  var rEl = document.getElementById('stat-rate');
+  rEl.className = 'stat-val '+(rate>=90?'c-green':rate>=70?'c-blue':'c-amber');
+  var lastFull = last ? new Date(last.posted_at).toLocaleString('en-GB') : 'never';
+  document.getElementById('last-run-text').textContent = 'Last run: '+lastFull;
 }
 
-function renderTable() {
+function renderChannelBars(){
+  var counts={};
+  CHANNELS.forEach(function(c){counts[c]=0;});
+  allItems.forEach(function(i){if(i.status==='posted'&&counts[i.channel]!==undefined) counts[i.channel]++;});
+  var maxC = Math.max.apply(null, CHANNELS.map(function(c){return counts[c];})) || 1;
+  var isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  var palette = isDark ? CH_COLOR_DARK : CH_COLOR_LIGHT;
+  function row(ch){
+    var pct = Math.round(counts[ch]/maxC*100);
+    var col = palette[ch];
+    return '<div class="ch-bar-row">'+
+      '<div class="ch-bar-lbl" style="color:'+col+'">#'+ch+'</div>'+
+      '<div class="ch-bar-track"><div class="ch-bar-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'+
+      '<div class="ch-bar-cnt">'+counts[ch]+'</div>'+
+    '</div>';
+  }
+  document.getElementById('ch-bars').innerHTML = CHANNELS.map(row).join('');
+}
+
+function renderTable(){
   var visible = allItems.filter(function(item){
-    if(filters.status  !== 'all' && item.status  !== filters.status)  return false;
-    if(filters.source  !== 'all' && item.source  !== filters.source)  return false;
-    if(filters.channel !== 'all' && item.channel !== filters.channel) return false;
+    if(filters.status !=='all'&&item.status !==filters.status)  return false;
+    if(filters.source !=='all'&&item.source !==filters.source)  return false;
+    if(filters.channel!=='all'&&item.channel!==filters.channel) return false;
     return true;
   });
   var tbody = document.getElementById('log-body');
-  if(!visible.length){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No items match the current filters.</td></tr>';
-    return;
-  }
+  if(!visible.length){ tbody.innerHTML='<tr><td colspan="5" class="empty-state">No items match the current filters.</td></tr>'; return; }
   tbody.innerHTML = visible.map(function(item){
-    var statusBadge = item.status==='posted'
-      ? '<span class="badge badge-posted">posted</span>'
+    var badge = item.status==='posted'
+      ? '<span class="badge badge-posted">✓ posted</span>'
       : item.status==='dry-run'
       ? '<span class="badge badge-dry">dry-run</span>'
-      : '<span class="badge badge-failed">failed</span>';
-    var chCss = CHANNEL_CSS[item.channel] || '';
-    var channelBadge = '<span class="channel-badge '+chCss+'">#'+esc(item.channel)+'</span>';
-    var srcIcon = item.source==='youtube' ? 'YT' : 'RSS';
-    var domain  = item.feed_domain || (item.source==='youtube' ? 'youtube.com' : '');
-    var sourceCell = '<span class="source-badge">'+srcIcon+' '+esc(domain)+'</span>';
-    var titleHtml = item.url
+      : '<span class="badge badge-failed">✕ failed</span>';
+    var chBadge = '<span class="ch-badge '+(CH_CSS[item.channel]||'')+'">'+esc(item.channel)+'</span>';
+    var isYT = item.source==='youtube';
+    var domain = item.feed_domain||(isYT?'youtube.com':'');
+    var src = '<span class="src-tag'+(isYT?' yt':'')+'">'+(isYT?'▶ YT':'◉ RSS')+'</span>';
+    var title = item.url
       ? '<a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">'+esc(item.title)+'</a>'
       : esc(item.title);
-    var errorHtml = (item.status==='failed' && item.error)
-      ? '<div class="error-msg">'+esc(item.error)+'</div>' : '';
-    var score = item.relevance_score != null ? Math.round(item.relevance_score*100) : null;
-    var scoreHtml = score != null
-      ? '<div class="score-bar"><div class="score-track"><div class="score-fill '+(score>=80?'hi':score<50?'lo':'')+'" style="width:'+score+'%"></div></div><span class="score-num">'+score+'%</span></div>'
-      : '<span class="score-num">-</span>';
+    var err = (item.status==='failed'&&item.error)?'<div class="err-msg">'+esc(item.error)+'</div>':'';
+    var meta = '<div class="title-meta">'+src+(domain?'<span>'+esc(domain)+'</span>':'')+'</div>';
+    var score = item.relevance_score!=null?Math.round(item.relevance_score*100):null;
+    var sc = score>=80?'score-hi':score>=50?'score-md':'score-lo';
+    var scoreHtml = score!=null
+      ? '<div class="score-bar"><div class="score-track"><div class="score-fill '+sc+'" style="width:'+score+'%"></div></div><span class="score-num">'+score+'%</span></div>'
+      : '<span class="score-num">—</span>';
     var ts = item.posted_at
       ? '<span class="ts" title="'+new Date(item.posted_at).toUTCString()+'">'+relTime(item.posted_at)+'</span>'
-      : '<span class="ts">-</span>';
-    return '<tr><td>'+statusBadge+'</td><td>'+channelBadge+'</td><td>'+sourceCell+'</td><td class="title-cell">'+titleHtml+errorHtml+'</td><td>'+scoreHtml+'</td><td>'+ts+'</td></tr>';
+      : '<span class="ts">—</span>';
+    return '<tr><td>'+badge+'</td><td>'+chBadge+'</td><td class="title-cell">'+title+err+meta+'</td><td>'+scoreHtml+'</td><td>'+ts+'</td></tr>';
   }).join('');
 }
 
-function renderSources() {
-  var cutoff30 = Date.now() - 30*86400000;
-  var activeDomains = [];
-  allItems.forEach(function(i){
-    if(i.posted_at && new Date(i.posted_at).getTime() > cutoff30 && i.feed_domain){
-      if(activeDomains.indexOf(i.feed_domain)<0) activeDomains.push(i.feed_domain);
-    }
-  });
-  var grid = document.getElementById('sources-grid');
-  grid.innerHTML = SOURCES.map(function(s){
-    var isActive = activeDomains.some(function(d){
-      var key = s.domain.toLowerCase().split(' ')[0];
-      return d && (key.includes(d) || d.includes(key));
-    });
-    var statusHtml = isActive
-      ? '<div class="source-status ok">active (seen last 30d)</div>'
-      : '<div class="source-status stale">no recent posts</div>';
-    var chipsHtml = s.channels.map(function(c){
-      return '<span class="channel-badge '+(CHANNEL_CSS[c]||'')+'" style="font-size:10px;padding:1px 6px">#'+c+'</span>';
-    }).join('');
-    var iconHtml = s.icon==='YT' ? '<span style="color:#ff5252">YT</span>' : '<span style="color:var(--accent)">RSS</span>';
-    return '<div class="source-card"><div class="source-icon">'+iconHtml+'</div><div class="source-info"><div class="source-domain">'+esc(s.domain)+'</div><div class="source-channels">'+chipsHtml+'</div>'+statusHtml+'</div></div>';
+function renderSources(){
+  var cutoff=Date.now()-30*86400000;
+  var active=[];
+  allItems.forEach(function(i){if(i.posted_at&&new Date(i.posted_at).getTime()>cutoff&&i.feed_domain&&active.indexOf(i.feed_domain)<0) active.push(i.feed_domain);});
+  document.getElementById('sources-grid').innerHTML = SOURCES.map(function(s){
+    var isActive=active.some(function(d){var k=s.d.toLowerCase().split(' ')[0];return d&&(k.includes(d)||d.includes(k));});
+    var chips=s.ch.map(function(c){return '<span class="ch-badge '+(CH_CSS[c]||'')+' " style="font-size:10px;padding:2px 7px">'+c+'</span>';}).join('');
+    var icon='<div class="src-icon '+(s.t==='youtube'?'yt':'rss')+'">'+(s.t==='youtube'?'YT':'RSS')+'</div>';
+    var status=isActive?'<div class="src-status ok">● Active — last 30 days</div>':'<div class="src-status stale">○ No recent posts</div>';
+    return '<div class="source-card">'+icon+'<div style="flex:1;min-width:0"><div class="src-domain">'+esc(s.d)+'</div><div class="src-channels">'+chips+'</div>'+status+'</div></div>';
   }).join('');
 }
 
-document.getElementById('filter-bar').addEventListener('click', function(e){
-  var chip = e.target.closest('.chip');
+document.getElementById('filter-bar').addEventListener('click',function(e){
+  var chip=e.target.closest('.chip');
   if(!chip) return;
-  var group = chip.dataset.group;
-  var val   = chip.dataset.val;
+  var group=chip.dataset.group,val=chip.dataset.val;
   if(!group) return;
   chip.closest('.filter-group').querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
   chip.classList.add('active');
-  filters[group] = val;
+  filters[group]=val;
   renderTable();
 });
 
-function getToken(){ return localStorage.getItem(PAT_KEY) || ''; }
-
+function getToken(){ return localStorage.getItem(PAT_KEY)||''; }
 function resetToken(){
-  var t = prompt('Enter your GitHub Fine-grained PAT (Actions: write on this repo).\nLeave blank to clear stored token.');
+  var t=prompt('Enter GitHub Fine-grained PAT (Actions: write).\nLeave blank to clear.');
   if(t===null) return;
-  if(t.trim()){ localStorage.setItem(PAT_KEY,t.trim()); showToast('Token saved in localStorage','ok'); }
-  else { localStorage.removeItem(PAT_KEY); showToast('Token cleared','ok'); }
+  if(t.trim()){localStorage.setItem(PAT_KEY,t.trim());showToast('Token saved','ok');}
+  else{localStorage.removeItem(PAT_KEY);showToast('Token cleared','ok');}
 }
-
 async function runNow(){
-  var token = getToken();
+  var token=getToken();
   if(!token){
-    token = prompt('Enter your GitHub Fine-grained PAT\n(needs Actions: write on this repo).\nSaved in browser localStorage only.');
+    token=prompt('Enter GitHub Fine-grained PAT (Actions: write).\nStored in your browser only.');
     if(!token||!token.trim()) return;
     localStorage.setItem(PAT_KEY,token.trim());
-    token = token.trim();
+    token=token.trim();
   }
-  var btn = document.getElementById('btn-run');
-  btn.disabled = true; btn.textContent = 'Triggering...';
+  var btn=document.getElementById('btn-run');
+  btn.disabled=true; btn.textContent='⏳ Triggering…';
   try {
-    var resp = await fetch(
-      'https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME+'/actions/workflows/'+WORKFLOW_ID+'/dispatches',
-      { method:'POST',
-        headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-        body:JSON.stringify({ref:'main'}) }
-    );
-    if(resp.status===204){ showToast('Workflow triggered - check Actions tab','ok'); }
-    else if(resp.status===401){ localStorage.removeItem(PAT_KEY); showToast('Invalid token (401) - cleared, try again','err'); }
-    else if(resp.status===403){ showToast('Forbidden (403) - PAT lacks Actions:write','err'); }
-    else { var body=await resp.text(); showToast('Error '+resp.status+': '+body.slice(0,80),'err'); }
-  } catch(err){ showToast('Network error: '+err.message,'err'); }
-  finally { btn.disabled=false; btn.textContent='Run Now'; }
+    var resp=await fetch('https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME+'/actions/workflows/'+WORKFLOW_ID+'/dispatches',
+      {method:'POST',headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({ref:'main'})});
+    if(resp.status===204) showToast('✓ Workflow triggered — check Actions tab','ok');
+    else if(resp.status===401){localStorage.removeItem(PAT_KEY);showToast('Invalid token (401) — cleared','err');}
+    else if(resp.status===403) showToast('Forbidden (403) — PAT needs Actions:write','err');
+    else{var b=await resp.text();showToast('Error '+resp.status+': '+b.slice(0,80),'err');}
+  } catch(err){showToast('Network error: '+err.message,'err');}
+  finally{btn.disabled=false;btn.textContent='▶ Run Now';}
 }
 
 function esc(s){
