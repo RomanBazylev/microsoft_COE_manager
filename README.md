@@ -10,7 +10,7 @@ RSS / YouTube / Trailhead
         ↓
    Fetcher (Python)          ← собирает контент
         ↓
-   AI Filter (Claude)        ← оценивает релевантность, отсекает старьё (>90 дней)
+   AI Filter (Gemini)        ← оценивает релевантность, отсекает старьё (>90 дней)
         ↓
    Router                    ← маппинг на нужный канал
         ↓
@@ -41,7 +41,7 @@ cd sf-autoposter
 
 | Secret name                      | Где взять                                    |
 |----------------------------------|----------------------------------------------|
-| `ANTHROPIC_API_KEY`              | console.anthropic.com → API Keys             |
+| `GEMINI_API_KEY`                 | console.cloud.google.com → AI Studio → API Keys |
 | `YOUTUBE_API_KEY`                | console.cloud.google.com → YouTube Data API v3 |
 | `TEAMS_WEBHOOK_CERTIFICATION`    | Teams → канал → … → Connectors → Incoming Webhook |
 | `TEAMS_WEBHOOK_PLAYGROUND`       | аналогично                                   |
@@ -94,7 +94,7 @@ schedule:
 ```bash
 pip install -r requirements.txt
 
-export ANTHROPIC_API_KEY="sk-ant-..."
+export GEMINI_API_KEY="AIza..."
 export YOUTUBE_API_KEY="AIza..."
 export TEAMS_WEBHOOK_CERTIFICATION="https://..."
 
@@ -140,7 +140,7 @@ sf-autoposter/
 
 | Переменная                | Описание                          |
 |---------------------------|-----------------------------------|
-| `ANTHROPIC_API_KEY`       | Claude API для AI-фильтрации      |
+| `GEMINI_API_KEY`          | Gemini API для AI-фильтрации      |
 | `YOUTUBE_API_KEY`         | YouTube Data API v3               |
 | `TEAMS_WEBHOOK_*`         | Incoming Webhook URL для каждого канала |
 

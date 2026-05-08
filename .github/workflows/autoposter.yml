@@ -2,7 +2,7 @@ name: SF Auto-Poster
 
 on:
   schedule:
-    - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC = 10:00 Warsaw (all channels)
+    - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC = 10:00 Warsaw (CEST/summer) / 09:00 Warsaw (CET/winter)
     - cron: "0 7 * * *"        # Daily 07:00 UTC (meetup-events freshness check)
   workflow_dispatch:
     inputs:
@@ -38,13 +38,14 @@ jobs:
       - name: Run pipeline
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          GEMINI_API_KEY:                 ${{ secrets.GEMINI_API_KEY }}
           TEAMS_WEBHOOK_CERTIFICATION:    ${{ secrets.TEAMS_WEBHOOK_CERTIFICATION }}
           TEAMS_WEBHOOK_PLAYGROUND:       ${{ secrets.TEAMS_WEBHOOK_PLAYGROUND }}
           TEAMS_WEBHOOK_SALESFORCE_RSS:   ${{ secrets.TEAMS_WEBHOOK_SALESFORCE_RSS }}
           TEAMS_WEBHOOK_NEED_HELP:        ${{ secrets.TEAMS_WEBHOOK_NEED_HELP }}
           TEAMS_WEBHOOK_MEETUP_EVENTS:    ${{ secrets.TEAMS_WEBHOOK_MEETUP_EVENTS }}
           TEAMS_WEBHOOK_TOPIC_OF_THE_DAY: ${{ secrets.TEAMS_WEBHOOK_TOPIC_OF_THE_DAY }}
-        run: python src/main.py
+        run: python src/main.py || exit 1
 
       - name: Sync log to docs and write run metadata
         run: |

@@ -9,6 +9,7 @@ The URL format is detected automatically, no config needed.
 """
 import os
 import json
+import time
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
@@ -178,6 +179,7 @@ def run(items: list[dict]) -> list[dict]:
             "status": "posted" if success else "failed",
             "error": error,
         })
+        time.sleep(1)  # rate-limit: avoid hammering Teams webhook API
 
     return results
 

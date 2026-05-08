@@ -9,14 +9,14 @@ import time
 import requests
 from pathlib import Path
 
-RELEVANCE_THRESHOLD = 0.4
+RELEVANCE_THRESHOLD = 0.6
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
     "gemini-1.5-flash:generateContent"
 )
-GEMINI_TIMEOUT = 10
-GEMINI_MAX_RETRIES = 1
+GEMINI_TIMEOUT = 20
+GEMINI_MAX_RETRIES = 2
 
 CHANNEL_KEYWORDS: dict[str, list[str]] = {
     "certification": [
@@ -115,7 +115,7 @@ def _gemini_summary(item: dict) -> str | None:
     for attempt in range(GEMINI_MAX_RETRIES + 1):
         try:
             resp = requests.post(
-                GEMINI_API_URL, params={"key": key}, json=payload, timeout=GEMINI_TIMEOUT
+                GEMINI_API_URL, headers={"x-goog-api-key": key}, json=payload, timeout=GEMINI_TIMEOUT
             )
             if resp.status_code == 429:
                 print("[Gemini] Quota exceeded — fallback for this run")
