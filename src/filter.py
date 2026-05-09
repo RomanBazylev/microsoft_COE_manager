@@ -178,12 +178,12 @@ def score_item(item: dict) -> dict:
 def load_seen_ids() -> set:
     seen_file = Path("data/seen_ids.json")
     if seen_file.exists():
-        return set(json.loads(seen_file.read_text()))
+        return set(json.loads(seen_file.read_text(encoding="utf-8-sig")))
     return set()
 
 
 def save_seen_ids(ids: set):
-    Path("data/seen_ids.json").write_text(json.dumps(list(ids), indent=2))
+    Path("data/seen_ids.json").write_text(json.dumps(list(ids), indent=2), encoding="utf-8")
 
 
 def run(items: list[dict]) -> list[dict]:
