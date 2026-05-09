@@ -9,7 +9,8 @@ import time
 import requests
 from pathlib import Path
 
-RELEVANCE_THRESHOLD = 0.5
+RELEVANCE_THRESHOLD = 0.25
+MATCH_SATURATION = 3  # 3 channel keyword matches = full relevance
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -154,8 +155,7 @@ def score_item(item: dict) -> dict:
     matches = sum(1 for kw in keywords if kw in text)
     generic_matches = sum(1 for kw in GENERIC_SF_KEYWORDS if kw in text)
 
-    max_possible = max(len(keywords), 1)
-    score = min(matches / max_possible + generic_matches * 0.05, 1.0)
+    score = min(matches / MATCH_SATURATION + generic_matches * 0.05, 1.0)
 
     if item.get("source") == "youtube":
         score = min(score + 0.15, 1.0)
