@@ -358,5 +358,23 @@
     "posted_at": "2026-05-09T05:59:46.100410+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "need-help",
+    "source": "rss",
+    "feed_domain": "reddit.com",
+    "feed_url": "https://www.reddit.com/r/salesforce/.rss",
+    "title": "Focus on Force course issue",
+    "url": "https://www.reddit.com/r/salesforce/comments/1t7yupj/focus_on_force_course_issue/",
+    "summary": "<!-- SC_OFF --><div class=\"md\"><p>I logged into the focus on force site to access my course but its taken me to K2 University, once logged in i can't see my course or previous purchases. Has that happened to anyone else? I have contacted their support but not sure when they'll get back to me!</p> </",
+    "published": "2026-05-09T08:14:32+00:00",
+    "id": "b5410d075c77aa61db8b25d96a05b5cd",
+    "relevance_score": 0.33,
+    "reason": "Matched 1 channel keywords, 0 generic SF keywords",
+    "suggested_comment": "💡 This might help with common issues.",
+    "ai_summary": null,
+    "posted_at": "2026-05-09T08:46:47.751565+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
