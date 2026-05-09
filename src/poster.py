@@ -147,7 +147,7 @@ def run(items: list[dict]) -> list[dict]:
         if not secret_name:
             continue
 
-        webhook_url = os.getenv(secret_name)
+        webhook_url = (os.getenv(secret_name) or "").strip()
         if not webhook_url:
             if secret_name not in warned:
                 print(f"[Poster] ⚠️  {secret_name} not set — skipping #{channel}")
