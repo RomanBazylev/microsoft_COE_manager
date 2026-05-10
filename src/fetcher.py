@@ -28,6 +28,8 @@ FEEDS = {
         "https://andyinthecloud.com/feed/",
         "https://unofficialsf.com/feed/",
         "https://www.reddit.com/r/salesforcedev/.rss",
+        "https://www.jitendrazaa.com/blog/feed/",
+        "https://developer.salesforce.com/blog/feed",
         # YouTube: Salesforce Developers channel (free RSS)
         "https://www.youtube.com/feeds/videos.xml?channel_id=UC-OBnBKJdVSTCLkCzj1CRMQ",
     ],
@@ -42,11 +44,14 @@ FEEDS = {
     ],
     "meetup-events": [
         "https://www.salesforce.com/blog/category/events/feed/",
+        "https://developer.salesforce.com/blog/feed",
     ],
     "topic-of-the-day": [
         "https://www.salesforce.com/blog/feed/",
         "https://automationchampion.com/feed/",
         "https://www.salesforceben.com/feed/",
+        "https://www.jitendrazaa.com/blog/feed/",
+        "https://developer.salesforce.com/blog/feed",
     ],
 }
 
