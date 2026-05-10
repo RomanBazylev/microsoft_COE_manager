@@ -30,8 +30,9 @@ SOURCE_EMOJI = {"rss": "📰", "youtube": "▶️"}
 
 
 def is_new_teams_webhook(url: str) -> bool:
-    """New Teams Workflows webhooks come from logic.azure.com."""
-    return "logic.azure.com" in url or "webhook.office.com" not in url
+    """Only logic.azure.com uses simple text payload.
+    powerplatform.com (Power Automate instant flows) expect Adaptive Card format."""
+    return "logic.azure.com" in url
 
 
 def build_new_teams_payload(item: dict) -> dict:
