@@ -9,11 +9,19 @@ The URL format is detected automatically, no config needed.
 """
 import os
 import json
+import re
 import time
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
+
+
+def _strip_html(text: str) -> str:
+    text = re.sub(r'<[^>]+>', '', text)
+    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>') \
+               .replace('&nbsp;', ' ').replace('&quot;', '"').replace('&#39;', "'")
+    return re.sub(r'\s+', ' ', text).strip()
 
 MAX_PER_CHANNEL = 2  # max posts per channel per run (anti-spam)
 
@@ -62,7 +70,7 @@ def build_old_teams_payload(item: dict) -> dict:
     score_pct = int(item.get("relevance_score", 0.8) * 100)
     comment = item.get("suggested_comment", item["title"])
     posted = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    summary = (item.get("summary") or "").strip()[:220]
+    summary = _strip_html(item.get("summary") or "")[:220]
 
     body_blocks = [
         {

@@ -4,11 +4,19 @@ No API keys required — YouTube videos come via public RSS feeds.
 All secrets (only webhooks) come from environment variables (GitHub Secrets).
 """
 import json
+import re
 import hashlib
 import feedparser
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
+
+
+def _strip_html(text: str) -> str:
+    text = re.sub(r'<[^>]+>', '', text)
+    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>') \
+               .replace('&nbsp;', ' ').replace('&quot;', '"').replace('&#39;', "'")
+    return re.sub(r'\s+', ' ', text).strip()
 
 MAX_AGE_DAYS = 90
 
@@ -95,7 +103,7 @@ def fetch_rss(channel: str, urls: list[str]) -> list[dict]:
                 if "reddit.com" in link and "/comments/" not in link:
                     continue
                 source = "youtube" if is_youtube else "rss"
-                summary = entry.get("summary", "") or ""
+                summary = _strip_html(entry.get("summary", "") or "")
                 items.append({
                     "channel": channel,
                     "source": source,
