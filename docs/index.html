@@ -433,7 +433,10 @@ function renderTable(){
       ? '<div class="score-bar"><div class="score-track"><div class="score-fill '+sc+'" style="width:'+score+'%"></div></div><span class="score-num">'+score+'%</span></div>'
       : '<span class="score-num">—</span>';
     var ts = item.posted_at
-      ? '<span class="ts" title="'+new Date(item.posted_at).toUTCString()+'">'+relTime(item.posted_at)+'</span>'
+      ? '<span class="ts" title="'+new Date(item.posted_at).toUTCString()+'">'+
+          new Date(item.posted_at).toLocaleDateString(navigator.language,{day:'numeric',month:'short',year:'numeric'})+'<br>'+
+          relTime(item.posted_at)+
+        '</span>'
       : '<span class="ts">—</span>';
     return '<tr><td>'+badge+'</td><td>'+chBadge+'</td><td class="title-cell">'+title+err+meta+'</td><td>'+scoreHtml+'</td><td>'+ts+'</td></tr>';
   }).join('');
