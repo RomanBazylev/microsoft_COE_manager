@@ -126,14 +126,18 @@
     .ts { font-size:11px; color:var(--muted); white-space:nowrap; font-family:var(--mono); }
     .empty-state { text-align:center; padding:56px 24px; color:var(--muted); font-size:13px; }
 
-    .sources-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; }
+    .sources-grid { display:block; }
+    .src-ch-section { margin-bottom:28px; }
+    .src-ch-hdr { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .src-ch-hdr hr { flex:1; border:none; border-top:1px solid var(--border); }
+    .src-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; }
     .source-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 16px; display:flex; align-items:flex-start; gap:12px; box-shadow:var(--sh); transition:box-shadow .15s,transform .15s; }
     .source-card:hover { box-shadow:var(--sh-md); transform:translateY(-1px); }
     .src-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; font-family:var(--mono); }
     .src-icon.rss { background:var(--accent-bg); color:var(--accent); }
     .src-icon.yt  { background:var(--red-bg); color:var(--red); }
     .src-domain { font-size:13px; font-weight:500; color:var(--text); }
-    .src-channels { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .src-also { font-size:10px; color:var(--muted); margin-top:5px; display:flex; flex-wrap:wrap; align-items:center; gap:3px; }
     .src-status { font-size:11px; font-weight:500; margin-top:6px; }
     .src-status.ok { color:var(--green); } .src-status.stale { color:var(--muted); }
 
@@ -423,16 +427,33 @@ function renderTable(){
 }
 
 function renderSources(){
-  var cutoff=Date.now()-30*86400000;
-  var active=[];
-  allItems.forEach(function(i){if(i.posted_at&&new Date(i.posted_at).getTime()>cutoff&&i.feed_domain&&active.indexOf(i.feed_domain)<0) active.push(i.feed_domain);});
-  document.getElementById('sources-grid').innerHTML = SOURCES.map(function(s){
-    var isActive=active.some(function(d){var k=s.d.toLowerCase().split(' ')[0];return d&&(k.includes(d)||d.includes(k));});
-    var chips=s.ch.map(function(c){return '<span class="ch-badge '+(CH_CSS[c]||'')+' " style="font-size:10px;padding:2px 7px">'+c+'</span>';}).join('');
-    var icon='<div class="src-icon '+(s.t==='youtube'?'yt':'rss')+'">'+(s.t==='youtube'?'YT':'RSS')+'</div>';
-    var status=isActive?'<div class="src-status ok">● Active — last 30 days</div>':'<div class="src-status stale">○ No recent posts</div>';
-    return '<div class="source-card">'+icon+'<div style="flex:1;min-width:0"><div class="src-domain">'+esc(s.d)+'</div><div class="src-channels">'+chips+'</div>'+status+'</div></div>';
+  var cutoff = Date.now() - 30*86400000;
+  var active = [];
+  allItems.forEach(function(i){
+    if(i.posted_at && new Date(i.posted_at).getTime() > cutoff && i.feed_domain && active.indexOf(i.feed_domain) < 0)
+      active.push(i.feed_domain);
+  });
+  var html = CHANNELS.map(function(ch){
+    var chSources = SOURCES.filter(function(s){ return s.ch.indexOf(ch) >= 0; });
+    if(!chSources.length) return '';
+    var cards = chSources.map(function(s){
+      var isActive = active.some(function(d){ var k=s.d.toLowerCase().split(' ')[0]; return d&&(k.includes(d)||d.includes(k)); });
+      var icon = '<div class="src-icon '+(s.t==='youtube'?'yt':'rss')+'">'+(s.t==='youtube'?'YT':'RSS')+'</div>';
+      var status = isActive ? '<div class="src-status ok">● Active</div>' : '<div class="src-status stale">○ No recent posts</div>';
+      var others = s.ch.filter(function(c){ return c !== ch; });
+      var alsoHtml = others.length
+        ? '<div class="src-also">also in: '+others.map(function(c){
+            return '<span class="ch-badge '+(CH_CSS[c]||'')+'" style="font-size:10px;padding:2px 6px">'+c+'</span>';
+          }).join('')+'</div>'
+        : '';
+      return '<div class="source-card">'+icon+'<div style="flex:1;min-width:0"><div class="src-domain">'+esc(s.d)+'</div>'+alsoHtml+status+'</div></div>';
+    }).join('');
+    return '<div class="src-ch-section">'
+      +'<div class="src-ch-hdr"><span class="ch-badge '+(CH_CSS[ch]||'')+'">'+ch+'</span><hr /></div>'
+      +'<div class="src-cards-grid">'+cards+'</div>'
+      +'</div>';
   }).join('');
+  document.getElementById('sources-grid').innerHTML = html;
 }
 
 document.getElementById('filter-bar').addEventListener('click',function(e){
