@@ -152,6 +152,13 @@
     .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
     .tab-panel { display:none; }
     .tab-panel.active { display:block; }
+    .schedule-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; margin-bottom:4px; }
+    .sched-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px 18px; box-shadow:var(--sh); display:flex; align-items:flex-start; gap:12px; }
+    .sched-icon { font-size:22px; flex-shrink:0; line-height:1; margin-top:2px; }
+    .sched-label { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
+    .sched-when { font-size:15px; font-weight:700; color:var(--text); line-height:1.2; }
+    .sched-countdown { font-size:11px; color:var(--accent); font-weight:600; margin-top:4px; font-family:var(--mono); }
+    .sched-type { font-size:11px; color:var(--muted); margin-top:2px; }
     @media(max-width:1100px) { .stats { grid-template-columns:repeat(3,1fr); } }
     @media(max-width:700px) {
       header { padding:0 16px; } .logo-sub { display:none; }
@@ -231,6 +238,10 @@
 
   <div class="section-hdr"><span class="section-title">Channel Activity</span><hr /></div>
   <div class="ch-bars-card" id="ch-bars"></div>
+
+  <div class="section-hdr" style="margin-top:32px"><span class="section-title">Upcoming Scheduled Runs</span><hr /></div>
+  <div class="schedule-grid" id="schedule-grid"></div>
+
   </div><!-- /tab-overview -->
 
   <div class="tab-panel" id="tab-feed">
@@ -531,6 +542,61 @@ document.getElementById('tabs-nav').addEventListener('click', function(e) {
   btn.classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
 });
+
+// ── Scheduled runs ────────────────────────────────────────────────────────────
+// Mirrors autoposter.yml cron schedule (all times UTC)
+var SCHEDULES = [
+  { label: 'Main run',           icon: '🚀', cron: { hour: 8,  days: [1,3,5] }, type: 'Mon / Wed / Fri' },
+  { label: 'Events check',       icon: '📅', cron: { hour: 7,  days: [0,1,2,3,4,5,6] }, type: 'Daily' },
+];
+
+function nextOccurrence(hour, daysOfWeek) {
+  var now = new Date();
+  for (var offset = 0; offset <= 7; offset++) {
+    var d = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offset,
+      hour, 0, 0, 0
+    ));
+    if (daysOfWeek.indexOf(d.getUTCDay()) >= 0 && d.getTime() > Date.now()) {
+      return d;
+    }
+  }
+  return null;
+}
+
+function formatCountdown(ms) {
+  var s = Math.floor(ms / 1000);
+  var m = Math.floor(s / 60); s %= 60;
+  var h = Math.floor(m / 60); m %= 60;
+  var d = Math.floor(h / 24); h %= 24;
+  if (d > 0) return 'in ' + d + 'd ' + h + 'h';
+  if (h > 0) return 'in ' + h + 'h ' + m + 'm';
+  return 'in ' + m + 'm ' + s + 's';
+}
+
+function renderSchedule() {
+  document.getElementById('schedule-grid').innerHTML = SCHEDULES.map(function(s) {
+    var next = nextOccurrence(s.cron.hour, s.cron.days);
+    if (!next) return '';
+    var localStr = next.toLocaleString(navigator.language, {
+      weekday: 'short', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+    });
+    var countdown = formatCountdown(next.getTime() - Date.now());
+    var utcStr = next.getUTCHours() + ':00 UTC';
+    return '<div class="sched-card">'
+      + '<div class="sched-icon">' + s.icon + '</div>'
+      + '<div>'
+      + '<div class="sched-label">' + esc(s.label) + '</div>'
+      + '<div class="sched-when">' + esc(localStr) + '</div>'
+      + '<div class="sched-countdown">' + countdown + '</div>'
+      + '<div class="sched-type">' + esc(s.type) + ' · ' + utcStr + '</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+renderSchedule();
+setInterval(renderSchedule, 30000); // update countdown every 30s
 
 loadLog();
 setInterval(loadLog, 5*60*1000);
