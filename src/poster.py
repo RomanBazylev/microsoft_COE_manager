@@ -62,6 +62,42 @@ def build_old_teams_payload(item: dict) -> dict:
     score_pct = int(item.get("relevance_score", 0.8) * 100)
     comment = item.get("suggested_comment", item["title"])
     posted = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    summary = (item.get("summary") or "").strip()[:220]
+
+    body_blocks = [
+        {
+            "type": "TextBlock",
+            "text": f"{emoji} {item['title']}",
+            "weight": "Bolder",
+            "size": "Medium",
+            "wrap": True,
+        },
+    ]
+    if summary:
+        body_blocks.append({
+            "type": "TextBlock",
+            "text": summary,
+            "wrap": True,
+            "spacing": "Small",
+            "isSubtle": True,
+        })
+    body_blocks += [
+        {
+            "type": "TextBlock",
+            "text": comment,
+            "wrap": True,
+            "spacing": "Small",
+        },
+        {
+            "type": "FactSet",
+            "facts": [
+                {"title": "Source",    "value": item["source"].capitalize()},
+                {"title": "Relevance", "value": f"{score_pct}%"},
+                {"title": "Posted",    "value": posted},
+            ],
+            "spacing": "Medium",
+        },
+    ]
 
     return {
         "type": "message",
@@ -71,30 +107,7 @@ def build_old_teams_payload(item: dict) -> dict:
                 "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                 "type": "AdaptiveCard",
                 "version": "1.4",
-                "body": [
-                    {
-                        "type": "TextBlock",
-                        "text": f"{emoji} {item['title']}",
-                        "weight": "Bolder",
-                        "size": "Medium",
-                        "wrap": True,
-                    },
-                    {
-                        "type": "TextBlock",
-                        "text": comment,
-                        "wrap": True,
-                        "spacing": "Small",
-                    },
-                    {
-                        "type": "FactSet",
-                        "facts": [
-                            {"title": "Source",    "value": item["source"].capitalize()},
-                            {"title": "Relevance", "value": f"{score_pct}%"},
-                            {"title": "Posted",    "value": posted},
-                        ],
-                        "spacing": "Medium",
-                    },
-                ],
+                "body": body_blocks,
                 "actions": [{
                     "type": "Action.OpenUrl",
                     "title": "Read more →",

@@ -89,6 +89,9 @@ def fetch_rss(channel: str, urls: list[str]) -> list[dict]:
                 if not is_fresh(published):
                     continue
                 link = entry.get("link", "")
+                # Skip Reddit entries that point to subreddit root (not a specific post)
+                if "reddit.com" in link and "/comments/" not in link:
+                    continue
                 source = "youtube" if is_youtube else "rss"
                 summary = entry.get("summary", "") or ""
                 items.append({
