@@ -27,9 +27,8 @@ FEEDS = {
     "playground": [
         "https://andyinthecloud.com/feed/",
         "https://unofficialsf.com/feed/",
-        "https://www.reddit.com/r/salesforcedev/.rss",
         "https://www.jitendrazaa.com/blog/feed/",
-        "https://developer.salesforce.com/blog/feed",
+        "https://www.reddit.com/r/salesforcedev/.rss",
         # YouTube: Salesforce Developers channel (free RSS)
         "https://www.youtube.com/feeds/videos.xml?channel_id=UC-OBnBKJdVSTCLkCzj1CRMQ",
     ],
@@ -41,17 +40,15 @@ FEEDS = {
     "need-help": [
         "https://salesforce.stackexchange.com/feeds",
         "https://www.reddit.com/r/salesforce/.rss",
+        "https://developer.salesforce.com/blogs/feed",
     ],
     "meetup-events": [
         "https://www.salesforce.com/blog/category/events/feed/",
-        "https://developer.salesforce.com/blog/feed",
     ],
     "topic-of-the-day": [
         "https://www.salesforce.com/blog/feed/",
         "https://automationchampion.com/feed/",
         "https://www.salesforceben.com/feed/",
-        "https://www.jitendrazaa.com/blog/feed/",
-        "https://developer.salesforce.com/blog/feed",
     ],
 }
 
