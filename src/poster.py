@@ -99,7 +99,8 @@ def build_old_teams_payload(item: dict) -> dict:
         {
             "type": "FactSet",
             "facts": [
-                {"title": "Source",    "value": item["source"].capitalize()},
+                {"title": "Source",    "value": item.get("feed_domain") or item["source"].capitalize()},
+                {"title": "Type",      "value": item["source"].capitalize()},
                 {"title": "Relevance", "value": f"{score_pct}%"},
                 {"title": "Posted",    "value": posted},
             ],

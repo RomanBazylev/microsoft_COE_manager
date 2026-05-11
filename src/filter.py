@@ -192,6 +192,19 @@ def run(items: list[dict]) -> list[dict]:
     new_items = [i for i in items if i["id"] not in seen_ids]
     print(f"[Filter] {len(new_items)} new (skipped {len(items)-len(new_items)} duplicates)")
 
+    # Within-run dedup: same URL may appear for multiple channels — keep highest-priority channel only
+    seen_urls: set[str] = set()
+    deduped: list[dict] = []
+    for i in new_items:
+        url = i.get("url", "")
+        if url and url in seen_urls:
+            print(f"  [DEDUP] {i['channel']} / {i['title'][:60]}")
+            continue
+        if url:
+            seen_urls.add(url)
+        deduped.append(i)
+    new_items = deduped
+
     scored = [score_item(i) for i in new_items]
     approved = [i for i in scored if i.get("relevance_score", 0) >= RELEVANCE_THRESHOLD]
     rejected = [i for i in scored if i.get("relevance_score", 0) < RELEVANCE_THRESHOLD]
