@@ -70,7 +70,7 @@ def build_old_teams_payload(item: dict) -> dict:
     score_pct = int(item.get("relevance_score", 0.8) * 100)
     comment = item.get("suggested_comment", item["title"])
     posted = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    summary = _strip_html(item.get("summary") or "")[:220]
+    summary = _strip_html(item.get("summary") or "")[:500]
 
     body_blocks = [
         {

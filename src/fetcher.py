@@ -111,7 +111,7 @@ def fetch_rss(channel: str, urls: list[str]) -> list[dict]:
                     "feed_url": url,
                     "title": entry.get("title", ""),
                     "url": link,
-                    "summary": summary[:300],
+                    "summary": summary[:600],
                     "published": published,
                     "id": hashlib.md5(link.encode()).hexdigest(),
                 })
