@@ -48,6 +48,10 @@ CHANNEL_KEYWORDS: dict[str, list[str]] = {
         "salesforce", "crm", "cloud", "trailblazer",
         "spring", "summer", "winter", "release notes", "new features",
         "agentforce", "einstein", "platform update",
+        # technical & architectural topics (salesforcemonday.com style)
+        "apex", "lwc", "flow", "automation", "integration", "api",
+        "architecture", "developer", "admin", "ai", "metadata",
+        "batch", "queueable", "async", "headless", "react",
     ],
 }
 
@@ -76,7 +80,7 @@ CHANNEL_PROMPTS: dict[str, str] = {
     "salesforce-rss":   "Salesforce platform news and updates",
     "need-help":        "solving Salesforce development or admin problems",
     "meetup-events":    "Salesforce community events and meetups",
-    "topic-of-the-day": "Salesforce release notes or platform updates",
+    "topic-of-the-day": "an interesting Salesforce topic, technical deep-dive, architectural pattern, or platform update",
 }
 
 _gemini_key: str | None = None

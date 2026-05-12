@@ -2,8 +2,8 @@ name: SF Auto-Poster
 
 on:
   schedule:
-    - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC = 10:00 Warsaw (CEST/summer) / 09:00 Warsaw (CET/winter)
-    - cron: "0 7 * * *"        # Daily 07:00 UTC (meetup-events freshness check)
+    - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC — all channels
+    - cron: "0 8 * * 2,4"      # Tue/Thu 08:00 UTC — topic-of-the-day only (daily tip card)
   workflow_dispatch:
     inputs:
       dry_run:
@@ -14,6 +14,11 @@ on:
         options:
           - "false"
           - "true"
+      channels_filter:
+        description: "Channels to run (comma-separated, leave blank for all)"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   run-autoposter:
@@ -35,9 +40,30 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Install Playwright Chromium
+        run: python -m playwright install chromium --with-deps
+
+      - name: Determine channels filter
+        id: channels
+        run: |
+          # Manual dispatch: use input if provided
+          # Scheduled Tue/Thu (cron "0 8 * * 2,4"): topic-of-the-day only
+          # Scheduled Mon/Wed/Fri: all channels (empty filter)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "filter=${{ github.event.inputs.channels_filter }}" >> $GITHUB_OUTPUT
+          else
+            DAY=$(date -u +%u)   # 1=Mon ... 7=Sun
+            if [ "$DAY" = "2" ] || [ "$DAY" = "4" ]; then
+              echo "filter=topic-of-the-day" >> $GITHUB_OUTPUT
+            else
+              echo "filter=" >> $GITHUB_OUTPUT
+            fi
+          fi
+
       - name: Run pipeline
         env:
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          DRY_RUN:        ${{ github.event.inputs.dry_run || 'false' }}
+          CHANNELS_FILTER: ${{ steps.channels.outputs.filter }}
           GEMINI_API_KEY:                 ${{ secrets.GEMINI_API_KEY }}
           TEAMS_WEBHOOK_CERTIFICATION:    ${{ secrets.TEAMS_WEBHOOK_CERTIFICATION }}
           TEAMS_WEBHOOK_PLAYGROUND:       ${{ secrets.TEAMS_WEBHOOK_PLAYGROUND }}
@@ -47,7 +73,7 @@ jobs:
           TEAMS_WEBHOOK_TOPIC_OF_THE_DAY: ${{ secrets.TEAMS_WEBHOOK_TOPIC_OF_THE_DAY }}
         run: python src/main.py || exit 1
 
-      - name: Sync log to docs and write run metadata
+      - name: Sync log and tip images to docs
         run: |
           mkdir -p docs
           cp data/post_log.json docs/post_log.json
@@ -57,6 +83,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/post_log.json data/seen_ids.json docs/post_log.json docs/last_run.json
-          git diff --cached --quiet || git commit -m "bot: update post log [skip ci]"
+          git add data/post_log.json data/seen_ids.json docs/post_log.json docs/last_run.json docs/tip_*.png
+          git diff --cached --quiet || git commit -m "bot: update post log + tip card [skip ci]"
           git push

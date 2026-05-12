@@ -54,9 +54,14 @@ FEEDS = {
         "https://www.salesforce.com/blog/category/events/feed/",
     ],
     "topic-of-the-day": [
-        "https://www.salesforce.com/blog/feed/",
-        "https://automationchampion.com/feed/",
-        "https://www.salesforceben.com/feed/",
+        # Dedicated sources — NOT shared with salesforce-rss to avoid URL dedup
+        "https://salesforcemonday.com/feed/",           # deep technical weekly posts
+        "https://admin.salesforce.com/blog/feed",       # official Salesforce admin blog
+        "https://developer.salesforce.com/blogs/feed",  # Salesforce developer blog
+        "https://www.sfdcstop.com/feeds/posts/default?alt=rss",  # Apex tutorials, LWC, Flows
+        "https://www.apexhours.com/feed/",              # developer news, LWC guides, career
+        # YouTube: main Salesforce channel (not used in other channels)
+        "https://www.youtube.com/feeds/videos.xml?channel_id=UCKORm8sxh3cheBpqs0jkhDA",
     ],
 }
 

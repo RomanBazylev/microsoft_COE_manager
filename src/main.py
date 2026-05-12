@@ -3,6 +3,10 @@
 main.py — entrypoint for the SF Auto-Poster pipeline.
 Run locally:   python src/main.py
 Run in CI:     same (GitHub Actions calls this directly)
+
+Env vars:
+  DRY_RUN=true          — log only, no Teams posts
+  CHANNELS_FILTER=a,b   — only process listed channels (comma-separated)
 """
 import sys
 from pathlib import Path
@@ -13,6 +17,17 @@ sys.path.insert(0, str(Path(__file__).parent))
 import fetcher
 import filter as content_filter
 import poster
+import tip_generator
+import tip_renderer
+
+
+def _channels_filter() -> set[str] | None:
+    """Return a set of channel names to process, or None to process all."""
+    import os
+    val = os.getenv("CHANNELS_FILTER", "").strip()
+    if not val:
+        return None
+    return {c.strip() for c in val.split(",") if c.strip()}
 
 
 def main():
@@ -20,9 +35,15 @@ def main():
     print("SF Auto-Poster — starting pipeline")
     print("=" * 50)
 
+    channels = _channels_filter()
+    if channels:
+        print(f"[Config] CHANNELS_FILTER = {channels}")
+
     # Step 1: Fetch
-    print("\n[1/3] Fetching content...")
+    print("\n[1/4] Fetching content...")
     items = fetcher.run()
+    if channels:
+        items = [i for i in items if i.get("channel") in channels]
     print(f"      Total fetched: {len(items)}")
 
     if not items:
@@ -30,22 +51,48 @@ def main():
         return
 
     # Step 2: Filter + score
-    print("\n[2/3] Filtering with AI...")
+    print("\n[2/4] Filtering with AI...")
     approved = content_filter.run(items)
     print(f"      Approved: {len(approved)}")
 
+    # Step 3: Generate daily tip card (topic-of-the-day only)
+    print("\n[3/4] Generating tip card...")
+    tip_running = channels is None or "topic-of-the-day" in channels
+    if tip_running:
+        best_article = tip_generator.pick_best_article(approved)
+        if best_article:
+            print(f"      Best article: {best_article['title'][:70]}")
+            tip_item = tip_generator.generate_tip_item(best_article)
+
+            # Remove the original article from approved (tip replaces it)
+            approved = [i for i in approved if i.get("id") != best_article.get("id")]
+
+            # Render PNG
+            png_path = tip_renderer.render_tip(tip_item)
+            if png_path:
+                print(f"      PNG rendered → {tip_item['png_url']}")
+            else:
+                print("      PNG render failed — tip will post as text card (no image)")
+                tip_item["png_url"] = ""
+
+            approved.append(tip_item)
+        else:
+            print("      No topic-of-the-day article found — skipping tip card")
+    else:
+        print("      Skipped (CHANNELS_FILTER excludes topic-of-the-day)")
+
     if not approved:
-        print("Nothing passed the filter, exiting.")
+        print("Nothing to post, exiting.")
         return
 
-    # Step 3: Post to Teams
-    print("\n[3/3] Posting to Teams...")
+    # Step 4: Post to Teams
+    print("\n[4/4] Posting to Teams...")
     results = poster.run(approved)
     poster.append_to_log(results)
 
     posted_count = sum(1 for r in results if r["status"] == "posted")
     failed_count = sum(1 for r in results if r["status"] == "failed")
-    dry_count = sum(1 for r in results if r["status"] == "dry_run")
+    dry_count    = sum(1 for r in results if r["status"] == "dry_run")
 
     print("\n" + "=" * 50)
     if dry_count:
@@ -57,3 +104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

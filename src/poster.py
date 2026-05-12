@@ -127,9 +127,96 @@ def build_old_teams_payload(item: dict) -> dict:
     }
 
 
+def build_tip_image_payload(item: dict) -> dict:
+    """
+    Adaptive Card that shows the PNG image + a 'Read article' button.
+    Used when item["source"] == "generated_tip" and a PNG was rendered.
+    Works with both old (Connector) and new (Workflows) webhook formats via the
+    caller selecting the right outer wrapper.
+    """
+    tip = item.get("tip_data", {})
+    title   = tip.get("title", item.get("title", "Salesforce Tip of the Day"))
+    benefit = tip.get("benefit", item.get("summary", ""))
+    png_url = item.get("png_url", "")
+    src_url = item.get("url", tip.get("source_url", ""))
+    label   = tip.get("label", "Tip of the Day")
+    domain  = item.get("feed_domain") or tip.get("source_domain", "")
+    posted  = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    body_blocks: list = []
+
+    if png_url:
+        body_blocks.append({
+            "type": "Image",
+            "url": png_url,
+            "altText": title,
+            "size": "Stretch",
+            "style": "default",
+        })
+    else:
+        # Fallback text card when no PNG
+        body_blocks += [
+            {
+                "type": "TextBlock",
+                "text": f"🔥 {title}",
+                "weight": "Bolder",
+                "size": "Large",
+                "wrap": True,
+            },
+            {
+                "type": "TextBlock",
+                "text": benefit,
+                "wrap": True,
+                "spacing": "Small",
+            },
+        ]
+
+    body_blocks.append({
+        "type": "FactSet",
+        "facts": [
+            {"title": "Label",  "value": label},
+            {"title": "Source", "value": domain},
+            {"title": "Posted", "value": posted},
+        ],
+        "spacing": "Small",
+    })
+
+    actions = []
+    if src_url:
+        actions.append({
+            "type": "Action.OpenUrl",
+            "title": "Read full article →",
+            "url": src_url,
+        })
+    if png_url:
+        actions.append({
+            "type": "Action.OpenUrl",
+            "title": "Open image ↗",
+            "url": png_url,
+        })
+
+    return {
+        "type": "message",
+        "attachments": [{
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": body_blocks,
+                "actions": actions,
+            },
+        }],
+    }
+
+
 def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
     """Returns (success, error_message)."""
-    if is_new_teams_webhook(webhook_url):
+    # Generated tip always uses Adaptive Card with image
+    if item.get("source") == "generated_tip":
+        payload = build_tip_image_payload(item)
+        webhook_type = "Tip Card"
+    elif is_new_teams_webhook(webhook_url):
         payload = build_new_teams_payload(item)
         webhook_type = "Workflows (new)"
     else:
