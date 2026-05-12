@@ -79,10 +79,16 @@ jobs:
           cp data/post_log.json docs/post_log.json
           echo "{\"run_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"trigger\": \"${{ github.event_name }}\", \"dry_run\": \"${{ github.event.inputs.dry_run || 'false' }}\"}" > docs/last_run.json
 
+      - name: Clean up tip PNGs older than 30 days
+        run: |
+          find docs -name "tip_*.png" -mtime +30 -print -delete || true
+          echo "Cleanup done (kept last 30 days of tip cards)"
+
       - name: Commit data back to repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/post_log.json data/seen_ids.json docs/post_log.json docs/last_run.json docs/tip_*.png
+          git add -u docs/ 2>/dev/null || true
           git diff --cached --quiet || git commit -m "bot: update post log + tip card [skip ci]"
           git push
