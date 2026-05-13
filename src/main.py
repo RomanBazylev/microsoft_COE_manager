@@ -50,6 +50,15 @@ def main():
         print("No items fetched, exiting.")
         return
 
+    # Save raw topic-of-the-day items BEFORE filter marks them as seen.
+    # Tip card generation needs the best RECENT article regardless of seen_ids
+    # (blogs don't publish daily; seen_ids would starve the tip queue after the first run).
+    tip_running = channels is None or "topic-of-the-day" in channels
+    raw_topic_items = (
+        [i for i in items if i.get("channel") == "topic-of-the-day"]
+        if tip_running else []
+    )
+
     # Step 2: Filter + score
     print("\n[2/4] Filtering with AI...")
     approved = content_filter.run(items)
@@ -57,14 +66,20 @@ def main():
 
     # Step 3: Generate daily tip card (topic-of-the-day only)
     print("\n[3/4] Generating tip card...")
-    tip_running = channels is None or "topic-of-the-day" in channels
     if tip_running:
-        best_article = tip_generator.pick_best_article(approved)
+        # Score raw topic items independently of seen_ids
+        scored_topic = [content_filter.score_item(i) for i in raw_topic_items]
+        scored_topic = [
+            i for i in scored_topic
+            if i.get("relevance_score", 0) >= content_filter.RELEVANCE_THRESHOLD
+        ]
+        print(f"      Topic-of-the-day candidates: {len(scored_topic)} (from feed, incl. seen)")
+        best_article = tip_generator.pick_best_article(scored_topic)
         if best_article:
             print(f"      Best article: {best_article['title'][:70]}")
             tip_item = tip_generator.generate_tip_item(best_article)
 
-            # Remove the original article from approved (tip replaces it)
+            # Remove the original article from approved if it happened to be new this run
             approved = [i for i in approved if i.get("id") != best_article.get("id")]
 
             # Render PNG

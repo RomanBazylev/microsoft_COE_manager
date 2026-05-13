@@ -11,6 +11,7 @@ import re
 import time
 import requests
 from datetime import datetime, timezone
+from pathlib import Path
 
 GEMINI_API_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -64,17 +65,54 @@ def _domain_from_url(url: str) -> str:
         return "salesforce.com"
 
 
-def pick_best_article(approved_items: list[dict]) -> dict | None:
-    """Return the highest-scoring topic-of-the-day item, preferring RSS over YouTube."""
-    candidates = [i for i in approved_items if i.get("channel") == "topic-of-the-day"]
-    if not candidates:
+TIP_USED_IDS_PATH = Path("data/tip_used_ids.json")
+TIP_DEDUPE_DAYS = 7  # don't re-use the same article as a tip card within this window
+
+
+def _load_tip_used() -> dict:
+    """Load {article_id: iso_date_used} map."""
+    if TIP_USED_IDS_PATH.exists():
+        try:
+            return json.loads(TIP_USED_IDS_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_tip_used(mapping: dict) -> None:
+    TIP_USED_IDS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    # Prune entries older than TIP_DEDUPE_DAYS to keep the file small
+    today = datetime.now(timezone.utc).date()
+    pruned = {
+        k: v for k, v in mapping.items()
+        if (today - datetime.fromisoformat(v).date()).days < TIP_DEDUPE_DAYS
+    }
+    TIP_USED_IDS_PATH.write_text(json.dumps(pruned, indent=2), encoding="utf-8")
+
+
+def pick_best_article(candidates: list[dict]) -> dict | None:
+    """
+    Return the highest-scoring topic-of-the-day item, preferring RSS over YouTube.
+    Skips articles already used as a tip card within TIP_DEDUPE_DAYS.
+    Accepts either a pre-filtered list of topic-of-the-day items or a mixed list.
+    """
+    topic_items = [i for i in candidates if i.get("channel") == "topic-of-the-day"]
+    if not topic_items:
         return None
-    # Prefer RSS (has actual article text), deprioritize youtube
-    candidates.sort(key=lambda x: (
+
+    used = _load_tip_used()
+    available = [i for i in topic_items if i.get("id", "") not in used]
+    if not available:
+        # All recent articles already used — fall back to the whole pool
+        print("[TipGen] All topic articles recently used — resetting tip dedup for this run")
+        available = topic_items
+
+    # Prefer RSS (has actual article text), then higher relevance score
+    available.sort(key=lambda x: (
         0 if x.get("source") == "youtube" else 1,
         x.get("relevance_score", 0),
     ), reverse=True)
-    return candidates[0]
+    return available[0]
 
 
 def _call_gemini(article: dict) -> dict | None:
@@ -181,6 +219,13 @@ def generate_tip_item(article: dict) -> dict:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     png_filename = f"tip_{today}.png"
     png_url = f"{GITHUB_PAGES_BASE}/{png_filename}"
+
+    # Mark this article as used so the same article won't be tipped again for TIP_DEDUPE_DAYS
+    article_id = article.get("id", "")
+    if article_id:
+        used = _load_tip_used()
+        used[article_id] = today
+        _save_tip_used(used)
 
     return {
         # poster-compatible fields

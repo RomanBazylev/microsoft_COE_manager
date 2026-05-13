@@ -88,7 +88,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/post_log.json data/seen_ids.json docs/post_log.json docs/last_run.json docs/tip_*.png
+          git add data/post_log.json data/seen_ids.json data/tip_used_ids.json docs/post_log.json docs/last_run.json docs/tip_*.png
           git add -u docs/ 2>/dev/null || true
           git diff --cached --quiet || git commit -m "bot: update post log + tip card [skip ci]"
           git push
