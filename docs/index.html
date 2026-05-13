@@ -124,6 +124,7 @@
     .score-hi { background:var(--green); } .score-md { background:var(--accent); } .score-lo { background:var(--amber); }
     .score-num { font-size:11px; font-weight:600; color:var(--muted); font-family:var(--mono); }
     .ts { font-size:11px; color:var(--muted); white-space:nowrap; font-family:var(--mono); }
+    .pub-date { color:var(--muted); font-size:10px; font-family:var(--mono); opacity:0.75; }
     .empty-state { text-align:center; padding:56px 24px; color:var(--muted); font-size:13px; }
 
     .sources-grid { display:block; }
@@ -405,7 +406,13 @@ function renderChannelBars(){
 
 function renderTable(){
   var visible = allItems.filter(function(item){
-    if(filters.status !=='all'&&item.status !==filters.status)  return false;
+    if(filters.status !=='all'){
+      var st = item.status;
+      var fst = filters.status;
+      // normalise dry_run / dry-run
+      if(fst==='dry-run'){ if(st!=='dry-run'&&st!=='dry_run') return false; }
+      else if(st!==fst) return false;
+    }
     if(filters.source !=='all'&&item.source !==filters.source)  return false;
     if(filters.channel!=='all'&&item.channel!==filters.channel) return false;
     return true;
@@ -415,18 +422,19 @@ function renderTable(){
   tbody.innerHTML = visible.map(function(item){
     var badge = item.status==='posted'
       ? '<span class="badge badge-posted">✓ posted</span>'
-      : item.status==='dry-run'
+      : (item.status==='dry-run'||item.status==='dry_run')
       ? '<span class="badge badge-dry">dry-run</span>'
       : '<span class="badge badge-failed">✕ failed</span>';
     var chBadge = '<span class="ch-badge '+(CH_CSS[item.channel]||'')+'">'+esc(item.channel)+'</span>';
     var isYT = item.source==='youtube';
     var domain = item.feed_domain||(isYT?'youtube.com':'');
     var src = '<span class="src-tag'+(isYT?' yt':'')+'">'+(isYT?'▶ YT':'◉ RSS')+'</span>';
+    var pubDate = item.published ? (function(){ try { return new Date(item.published).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(e){ return ''; } })() : '';
     var title = item.url
       ? '<a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">'+esc(item.title)+'</a>'
       : esc(item.title);
     var err = (item.status==='failed'&&item.error)?'<div class="err-msg">'+esc(item.error)+'</div>':'';
-    var meta = '<div class="title-meta">'+src+(domain?'<span>'+esc(domain)+'</span>':'')+'</div>';
+    var meta = '<div class="title-meta">'+src+(domain?'<span>'+esc(domain)+'</span>':'')+(pubDate?'<span class="pub-date">📅 '+pubDate+'</span>':'')+'</div>';
     var score = item.relevance_score!=null?Math.round(item.relevance_score*100):null;
     var sc = score>=80?'score-hi':score>=50?'score-md':'score-lo';
     var scoreHtml = score!=null
