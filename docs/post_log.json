@@ -1207,5 +1207,36 @@
     "posted_at": "2026-05-18T11:50:47.601040+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "The New Agentforce Metadata and Development Lifecycle",
+    "url": "https://developer.salesforce.com/blogs/2026/05/new-agentforce-metadata-and-development-lifecycle",
+    "summary": "Streamline your CI/CD pipelines by leveraging the new versioned metadata model and human-readable Agent Scripts. Learn how bundleized assets eliminate \"global ripples\" and simplify peer reviews for mo",
+    "published": "Thu, 14 May 2026 19:55:24 +0000",
+    "id": "e0bf2611c1b0c56746bf5bd6d826a166",
+    "relevance_score": 1.0,
+    "suggested_comment": "Streamline your CI/CD pipelines by leveraging the new versioned metadata model and human-readable Agent Scripts. Learn how bundleized assets eliminate \"global ripples\" and simplify peer reviews for mo",
+    "feed_domain": "developer.salesforce.com",
+    "tip_data": {
+      "title": "The New Agentforce Metadata and Development Lifecycle",
+      "subtitle": "Streamline your CI/CD pipelines by leveraging the new versioned metadata model and human-readable Agent Scripts. Learn h",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Streamline your CI/CD pipelines by leveraging the new versioned metadata model and human-readable Agent Scripts. Learn how bundleized assets eliminate \"global ripples\" and simplify peer reviews for mo",
+      "source_url": "https://developer.salesforce.com/blogs/2026/05/new-agentforce-metadata-and-development-lifecycle",
+      "source_domain": "developer.salesforce.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-05-19.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-05-19.png",
+    "posted_at": "2026-05-19T11:17:27.392415+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
