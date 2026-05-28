@@ -1681,5 +1681,36 @@
     "posted_at": "2026-05-27T11:45:41.746114+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "Capture Rich Data within Agent Conversations by Using Discov",
+    "url": "https://developer.salesforce.com/blogs/2026/05/capture-rich-data-within-agent-conversations-by-using-discovery-framework",
+    "summary": "Learn how to integrate Discovery Framework, an Omniscript-based digital form engine in Agentforce for Financial Services, directly into an Agentforce agent. The post Capture Rich Data within Agent Con",
+    "published": "Wed, 27 May 2026 15:00:43 +0000",
+    "id": "1f5301735cabcf3b9f6cfd08075729fc",
+    "relevance_score": 1.0,
+    "suggested_comment": "Learn how to integrate Discovery Framework, an Omniscript-based digital form engine in Agentforce for Financial Services, directly into an Agentforce agent. The post Capture Rich Data within Agent Con",
+    "feed_domain": "developer.salesforce.com",
+    "tip_data": {
+      "title": "Capture Rich Data within Agent Conversations by Using Discov",
+      "subtitle": "Learn how to integrate Discovery Framework, an Omniscript-based digital form engine in Agentforce for Financial Services",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Learn how to integrate Discovery Framework, an Omniscript-based digital form engine in Agentforce for Financial Services, directly into an Agentforce agent. The post Capture Rich Data within Agent Con",
+      "source_url": "https://developer.salesforce.com/blogs/2026/05/capture-rich-data-within-agent-conversations-by-using-discovery-framework",
+      "source_domain": "developer.salesforce.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-05-28.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-05-28.png",
+    "posted_at": "2026-05-28T11:38:38.763393+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
