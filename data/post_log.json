@@ -1954,5 +1954,36 @@
     "posted_at": "2026-06-01T13:48:38.891679+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "When AI Eats Your Annual Budget in Four Months: What Salesfo",
+    "url": "https://salesforcemonday.com/2026/05/25/agentforce-cost-governance-ai-budget/",
+    "summary": "Microsoft didn&#8217;t have a Claude problem. Uber didn&#8217;t have an AI problem. They had a governance problem. And if your Salesforce org is rolling out Agentforce without a cost strategy in place",
+    "published": "Mon, 25 May 2026 09:08:35 +0000",
+    "id": "6de155fb93beb468e2fc087ab1d8b8c5",
+    "relevance_score": 1.0,
+    "suggested_comment": "Microsoft didn&#8217;t have a Claude problem. Uber didn&#8217;t have an AI problem. They had a governance problem. And if your Salesforce org is rolling out Agentforce without a cost strategy in place",
+    "feed_domain": "salesforcemonday.com",
+    "tip_data": {
+      "title": "When AI Eats Your Annual Budget in Four Months: What Salesfo",
+      "subtitle": "Microsoft didn&#8217;t have a Claude problem. Uber didn&#8217;t have an AI problem. They had a governance problem. And i",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Microsoft didn&#8217;t have a Claude problem. Uber didn&#8217;t have an AI problem. They had a governance problem. And if your Salesforce org is rolling out Agentforce without a cost strategy in place",
+      "source_url": "https://salesforcemonday.com/2026/05/25/agentforce-cost-governance-ai-budget/",
+      "source_domain": "salesforcemonday.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-06-02.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-06-02.png",
+    "posted_at": "2026-06-02T12:04:06.961096+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
