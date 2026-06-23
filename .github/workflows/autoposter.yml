@@ -3,7 +3,7 @@ name: SF Auto-Poster
 on:
   schedule:
     - cron: "0 8 * * 1,3,5"   # Mon/Wed/Fri 08:00 UTC — all channels
-    - cron: "0 8 * * 2,4"      # Tue/Thu 08:00 UTC — topic-of-the-day only (daily tip card)
+    - cron: "0 8 * * 2,4"      # Tue/Thu 08:00 UTC — topic-of-the-day + meetup-events
   workflow_dispatch:
     inputs:
       dry_run:
@@ -54,7 +54,7 @@ jobs:
           else
             DAY=$(date -u +%u)   # 1=Mon ... 7=Sun
             if [ "$DAY" = "2" ] || [ "$DAY" = "4" ]; then
-              echo "filter=topic-of-the-day" >> $GITHUB_OUTPUT
+              echo "filter=topic-of-the-day,meetup-events" >> $GITHUB_OUTPUT
             else
               echo "filter=" >> $GITHUB_OUTPUT
             fi

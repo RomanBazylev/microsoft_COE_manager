@@ -19,6 +19,7 @@ import filter as content_filter
 import poster
 import tip_generator
 import tip_renderer
+import events_fetcher
 
 
 def _channels_filter() -> set[str] | None:
@@ -40,8 +41,15 @@ def main():
         print(f"[Config] CHANNELS_FILTER = {channels}")
 
     # Step 1: Fetch
-    print("\n[1/4] Fetching content...")
+    print("\n[1/5] Fetching content...")
     items = fetcher.run()
+
+    # Also fetch dedicated events if meetup-events channel is active
+    events_running = channels is None or "meetup-events" in channels
+    if events_running:
+        event_items = events_fetcher.run()
+        items.extend(event_items)
+
     if channels:
         items = [i for i in items if i.get("channel") in channels]
     print(f"      Total fetched: {len(items)}")
@@ -60,12 +68,12 @@ def main():
     )
 
     # Step 2: Filter + score
-    print("\n[2/4] Filtering with AI...")
+    print("\n[2/5] Filtering with AI...")
     approved = content_filter.run(items)
     print(f"      Approved: {len(approved)}")
 
     # Step 3: Generate daily tip card (topic-of-the-day only)
-    print("\n[3/4] Generating tip card...")
+    print("\n[3/5] Generating tip card...")
     if tip_running:
         # Score raw topic items independently of seen_ids
         scored_topic = [content_filter.score_item(i) for i in raw_topic_items]
@@ -101,7 +109,7 @@ def main():
         return
 
     # Step 4: Post to Teams
-    print("\n[4/4] Posting to Teams...")
+    print("\n[4/5] Posting to Teams...")
     results = poster.run(approved)
     poster.append_to_log(results)
 

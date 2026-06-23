@@ -21,9 +21,10 @@ GEMINI_TIMEOUT = 30
 GITHUB_PAGES_BASE = "https://romanbazylev.github.io/microsoft_COE_manager"
 
 GEMINI_PROMPT_TEMPLATE = """\
-You are a Salesforce educator creating a daily visual tip card for a developer/admin team channel.
+You are a Salesforce educator creating a daily tip for a developer/admin team channel.
+The tip should be practical, engaging, and immediately useful.
 
-Based on the article below, extract or infer a concrete, practical Salesforce tip.
+Based on the article below, create a concise tip card.
 Respond ONLY with valid JSON (no markdown fences, no commentary).
 
 Article title: {title}
@@ -32,23 +33,25 @@ Article URL: {url}
 
 Return this exact JSON structure:
 {{
-  "title": "Short punchy feature/tip title (max 8 words)",
-  "subtitle": "One sentence explaining what this tip is about",
-  "label": "Category label e.g. Apex / Flow / LWC / Admin / Agentforce / Security",
-  "before_code": "The old/verbose/wrong way — 3-6 lines of Salesforce code or config (Apex/SOQL/JSON/XML). Use \\n for newlines.",
+  "title": "Short punchy title (max 8 words) — what the reader learns",
+  "subtitle": "2-3 sentence explanation: what this is, why it matters, and when to use it. Write conversationally as if explaining to a colleague.",
+  "label": "Category: Apex / Flow / LWC / Admin / Agentforce / Security / Integration",
+  "before_code": "The old/verbose/wrong way — 3-5 lines of Salesforce code (Apex/SOQL/JSON/Flow config). Use \\n for newlines.",
   "before_label": "BEFORE — The Old Way",
-  "after_code": "The new/better/cleaner way — 3-6 lines. Use \\n for newlines.",
-  "after_label": "AFTER — Summer '26",
-  "use_cases": ["Use case 1 (concrete)", "Use case 2", "Use case 3"],
-  "benefit": "One sentence: why developers/admins will love this",
+  "after_code": "The new/better/cleaner way — 3-5 lines. Use \\n for newlines.",
+  "after_label": "AFTER — Better Way",
+  "use_cases": ["Concrete scenario 1 (when you'd use this)", "Scenario 2", "Scenario 3"],
+  "benefit": "One-line takeaway: the practical impact (e.g. 'Saves 50% less code' or 'No more governor limit errors')",
   "source_url": "{url}",
   "source_domain": "{domain}"
 }}
 
 Rules:
-- before_code and after_code MUST be actual code or config, not prose
-- If the article is not about a specific code feature, make a realistic before/after comparing an old admin approach vs new
-- Keep code snippets short (3-6 lines) and readable
+- subtitle MUST be 2-3 full sentences, engaging and informative — this is what people read first
+- before_code and after_code should be actual code or config, not prose
+- If the article is NOT about a specific code feature, still create a useful before/after (old admin approach vs new)
+- use_cases should be real scenarios a Salesforce team encounters
+- Keep it practical — readers should think "I can use this today"
 - Do not hallucinate — base content on the article
 """
 

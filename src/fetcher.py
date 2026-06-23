@@ -52,6 +52,15 @@ FEEDS = {
     ],
     "meetup-events": [
         "https://www.salesforce.com/blog/category/events/feed/",
+        # Trailblazer Community Groups — Poland / CEE
+        "https://trailblazercommunitygroups.com/krakow-pl/feed/",
+        "https://trailblazercommunitygroups.com/warsaw-pl/feed/",
+        "https://trailblazercommunitygroups.com/wroclaw-pl/feed/",
+        # Salesforce events & Dreamin conferences
+        "https://www.salesforceben.com/category/events/feed/",
+        "https://dreamin.eu/feed/",
+        # YouTube: Salesforce Live events
+        "https://www.youtube.com/feeds/videos.xml?channel_id=UCKORm8sxh3cheBpqs0jkhDA",
     ],
     "topic-of-the-day": [
         # Dedicated sources — NOT shared with salesforce-rss to avoid URL dedup
@@ -60,6 +69,10 @@ FEEDS = {
         "https://developer.salesforce.com/blogs/feed",  # Salesforce developer blog
         "https://www.sfdcstop.com/feeds/posts/default?alt=rss",  # Apex tutorials, LWC, Flows
         "https://www.apexhours.com/feed/",              # developer news, LWC guides, career
+        # Additional variety — practical tips & best practices
+        "https://www.sfdc99.com/feed/",                 # Apex/admin tips for beginners
+        "https://www.salesforceweek.ly/feed/",          # curated weekly digest
+        "https://nebulaconsulting.co.uk/insights/feed/", # advanced Apex patterns
         # YouTube: main Salesforce channel (not used in other channels)
         "https://www.youtube.com/feeds/videos.xml?channel_id=UCKORm8sxh3cheBpqs0jkhDA",
     ],

@@ -129,56 +129,89 @@ def build_old_teams_payload(item: dict) -> dict:
 
 def build_tip_image_payload(item: dict) -> dict:
     """
-    Adaptive Card that shows the PNG image + a 'Read article' button.
-    Used when item["source"] == "generated_tip" and a PNG was rendered.
-    Works with both old (Connector) and new (Workflows) webhook formats via the
-    caller selecting the right outer wrapper.
+    Adaptive Card for Topic of the Day — rich inline content + optional image.
+    Shows title, description, use cases, and benefit text directly in the card
+    so users can read without clicking. PNG is shown inline for visual appeal.
     """
     tip = item.get("tip_data", {})
-    title   = tip.get("title", item.get("title", "Salesforce Tip of the Day"))
-    benefit = tip.get("benefit", item.get("summary", ""))
-    png_url = item.get("png_url", "")
-    src_url = item.get("url", tip.get("source_url", ""))
-    label   = tip.get("label", "Tip of the Day")
-    domain  = item.get("feed_domain") or tip.get("source_domain", "")
-    posted  = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    title    = tip.get("title", item.get("title", "Salesforce Tip of the Day"))
+    subtitle = tip.get("subtitle", "")
+    benefit  = tip.get("benefit", item.get("summary", ""))
+    png_url  = item.get("png_url", "")
+    src_url  = item.get("url", tip.get("source_url", ""))
+    label    = tip.get("label", "Tip of the Day")
+    domain   = item.get("feed_domain") or tip.get("source_domain", "")
+    posted   = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    use_cases = tip.get("use_cases", [])
 
-    body_blocks: list = []
+    body_blocks: list = [
+        # Header with emoji and title — always visible
+        {
+            "type": "TextBlock",
+            "text": f"🔥 TIP OF THE DAY — {label.upper()}",
+            "weight": "Bolder",
+            "size": "Small",
+            "color": "Accent",
+            "spacing": "None",
+        },
+        {
+            "type": "TextBlock",
+            "text": title,
+            "weight": "Bolder",
+            "size": "Large",
+            "wrap": True,
+            "spacing": "Small",
+        },
+    ]
 
+    # Subtitle / short description — always inline
+    if subtitle:
+        body_blocks.append({
+            "type": "TextBlock",
+            "text": subtitle,
+            "wrap": True,
+            "spacing": "Small",
+            "size": "Medium",
+        })
+
+    # Visual image — shown inline, no click needed
     if png_url:
         body_blocks.append({
             "type": "Image",
             "url": png_url,
             "altText": title,
             "size": "Stretch",
-            "style": "default",
+            "spacing": "Medium",
         })
-    else:
-        # Fallback text card when no PNG
-        body_blocks += [
-            {
-                "type": "TextBlock",
-                "text": f"🔥 {title}",
-                "weight": "Bolder",
-                "size": "Large",
-                "wrap": True,
-            },
-            {
-                "type": "TextBlock",
-                "text": benefit,
-                "wrap": True,
-                "spacing": "Small",
-            },
-        ]
 
+    # Use cases as bullet points
+    if use_cases:
+        cases_text = " · ".join(use_cases[:4])
+        body_blocks.append({
+            "type": "TextBlock",
+            "text": f"💡 **Use cases:** {cases_text}",
+            "wrap": True,
+            "spacing": "Small",
+            "size": "Small",
+        })
+
+    # Benefit / takeaway
+    if benefit:
+        body_blocks.append({
+            "type": "TextBlock",
+            "text": f"✅ {benefit}",
+            "wrap": True,
+            "spacing": "Small",
+            "color": "Good",
+        })
+
+    # Source info
     body_blocks.append({
-        "type": "FactSet",
-        "facts": [
-            {"title": "Label",  "value": label},
-            {"title": "Source", "value": domain},
-            {"title": "Posted", "value": posted},
-        ],
-        "spacing": "Small",
+        "type": "TextBlock",
+        "text": f"📎 Source: {domain} · {posted}",
+        "size": "Small",
+        "isSubtle": True,
+        "spacing": "Medium",
     })
 
     actions = []
@@ -187,12 +220,6 @@ def build_tip_image_payload(item: dict) -> dict:
             "type": "Action.OpenUrl",
             "title": "Read full article →",
             "url": src_url,
-        })
-    if png_url:
-        actions.append({
-            "type": "Action.OpenUrl",
-            "title": "Open image ↗",
-            "url": png_url,
         })
 
     return {
@@ -208,10 +235,25 @@ def build_tip_image_payload(item: dict) -> dict:
             },
         }],
     }
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "type": "AdaptiveCard",
+                "version": "1.4",
+                "body": body_blocks,
+                "actions": actions,
+            },
+        }],
+    }
 
 
 def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
     """Returns (success, error_message)."""
+    # Ensure no trailing encoded newline (%0A) that causes 401
+    webhook_url = webhook_url.strip().rstrip("\n").rstrip("\r")
+    if webhook_url.endswith("%0A") or webhook_url.endswith("%0a"):
+        webhook_url = webhook_url[:-3]
+
     # Generated tip always uses Adaptive Card with image
     if item.get("source") == "generated_tip":
         payload = build_tip_image_payload(item)
@@ -257,7 +299,7 @@ def run(items: list[dict]) -> list[dict]:
         if not secret_name:
             continue
 
-        webhook_url = (os.getenv(secret_name) or "").strip()
+        webhook_url = (os.getenv(secret_name) or "").strip().rstrip("%0A").rstrip("%0a")
         if not webhook_url:
             if secret_name not in warned:
                 print(f"[Poster] ⚠️  {secret_name} not set — skipping #{channel}")
