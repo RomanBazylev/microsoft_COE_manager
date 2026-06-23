@@ -2977,5 +2977,36 @@
     "posted_at": "2026-06-22T13:41:42.835609+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "Your First Salesforce + Claude Project Without Writing a Sin",
+    "url": "https://salesforcemonday.com/2026/05/18/salesforce-claude-no-code-project/",
+    "summary": "Most Salesforce admins assume AI tools are built for developers. They see conversations about Apex generation, LWC scaffolding, and terminal commands, and reasonably conclude that the tooling is not m",
+    "published": "Mon, 18 May 2026 09:21:18 +0000",
+    "id": "25cd2ced3cef6891fe84171858b82614",
+    "relevance_score": 1.0,
+    "suggested_comment": "Most Salesforce admins assume AI tools are built for developers. They see conversations about Apex generation, LWC scaffolding, and terminal commands, and reasonably conclude that the tooling is not m",
+    "feed_domain": "salesforcemonday.com",
+    "tip_data": {
+      "title": "Your First Salesforce + Claude Project Without Writing a Sin",
+      "subtitle": "Most Salesforce admins assume AI tools are built for developers. They see conversations about Apex generation, LWC scaff",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Most Salesforce admins assume AI tools are built for developers. They see conversations about Apex generation, LWC scaffolding, and terminal commands, and reasonably conclude that the tooling is not m",
+      "source_url": "https://salesforcemonday.com/2026/05/18/salesforce-claude-no-code-project/",
+      "source_domain": "salesforcemonday.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-06-23.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-06-23.png",
+    "posted_at": "2026-06-23T11:15:52.470668+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
