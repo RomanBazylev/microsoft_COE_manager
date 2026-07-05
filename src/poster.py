@@ -12,6 +12,7 @@ import json
 import re
 import time
 import requests
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
@@ -35,6 +36,44 @@ CHANNEL_WEBHOOKS = {
 }
 
 SOURCE_EMOJI = {"rss": "📰", "youtube": "▶️"}
+
+
+def _normalized_webhook_url(raw_url: str) -> str:
+    """
+    Normalize webhook URL safely without corrupting valid signature characters.
+    Handles accidental newline chars and encoded newlines in `sig` query value.
+    """
+    url = (raw_url or "").strip().replace("\r", "").replace("\n", "")
+    if not url:
+        return ""
+
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        return url
+
+    query_items = parse_qsl(parts.query, keep_blank_values=True)
+    normalized_items: list[tuple[str, str]] = []
+    for key, value in query_items:
+        if key.lower() == "sig":
+            value = value.replace("\r", "").replace("\n", "")
+        normalized_items.append((key, value))
+
+    normalized_query = urlencode(normalized_items, doseq=True)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, normalized_query, parts.fragment))
+
+
+def _redacted_url(url: str) -> str:
+    """Hide signature while keeping enough URL context for debugging."""
+    parts = urlsplit(url)
+    query_items = parse_qsl(parts.query, keep_blank_values=True)
+    safe_items: list[tuple[str, str]] = []
+    for key, value in query_items:
+        if key.lower() == "sig":
+            safe_items.append((key, "***redacted***"))
+        else:
+            safe_items.append((key, value))
+    safe_query = urlencode(safe_items, doseq=True)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, safe_query, parts.fragment))
 
 
 def is_new_teams_webhook(url: str) -> bool:
@@ -249,10 +288,7 @@ def build_tip_image_payload(item: dict) -> dict:
 
 def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
     """Returns (success, error_message)."""
-    # Ensure no trailing encoded newline (%0A) that causes 401
-    webhook_url = webhook_url.strip().rstrip("\n").rstrip("\r")
-    if webhook_url.endswith("%0A") or webhook_url.endswith("%0a"):
-        webhook_url = webhook_url[:-3]
+    webhook_url = _normalized_webhook_url(webhook_url)
 
     # Generated tip always uses Adaptive Card with image
     if item.get("source") == "generated_tip":
@@ -270,6 +306,23 @@ def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
         resp.raise_for_status()
         print(f"    [{webhook_type}] ✅ posted")
         return True, ""
+    except requests.HTTPError as e:
+        status = e.response.status_code if e.response is not None else "unknown"
+        body = (e.response.text or "")[:300] if e.response is not None else ""
+        if status == 401:
+            msg = (
+                f"HTTP 401 Unauthorized ({webhook_type}). "
+                f"Verify webhook URL/sig is current and not rotated. "
+                f"URL={_redacted_url(webhook_url)}"
+            )
+            if body:
+                msg += f" | response={body}"
+        else:
+            msg = f"HTTP {status} ({webhook_type}) | URL={_redacted_url(webhook_url)}"
+            if body:
+                msg += f" | response={body}"
+        print(f"    [{webhook_type}] ❌ failed: {msg}")
+        return False, msg
     except Exception as e:
         err = str(e)
         print(f"    [{webhook_type}] ❌ failed: {err}")
@@ -299,7 +352,7 @@ def run(items: list[dict]) -> list[dict]:
         if not secret_name:
             continue
 
-        webhook_url = (os.getenv(secret_name) or "").strip().rstrip("%0A").rstrip("%0a")
+        webhook_url = _normalized_webhook_url(os.getenv(secret_name) or "")
         if not webhook_url:
             if secret_name not in warned:
                 print(f"[Poster] ⚠️  {secret_name} not set — skipping #{channel}")
