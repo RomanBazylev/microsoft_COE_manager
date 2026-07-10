@@ -274,16 +274,6 @@ def build_tip_image_payload(item: dict) -> dict:
             },
         }],
     }
-            "contentType": "application/vnd.microsoft.card.adaptive",
-            "content": {
-                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                "type": "AdaptiveCard",
-                "version": "1.4",
-                "body": body_blocks,
-                "actions": actions,
-            },
-        }],
-    }
 
 
 def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:

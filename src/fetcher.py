@@ -5,6 +5,7 @@ All secrets (only webhooks) come from environment variables (GitHub Secrets).
 """
 import json
 import re
+import html
 import hashlib
 import feedparser
 from datetime import datetime, timezone, timedelta
@@ -14,8 +15,7 @@ from urllib.parse import urlparse
 
 def _strip_html(text: str) -> str:
     text = re.sub(r'<[^>]+>', '', text)
-    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>') \
-               .replace('&nbsp;', ' ').replace('&quot;', '"').replace('&#39;', "'")
+    text = html.unescape(text)
     return re.sub(r'\s+', ' ', text).strip()
 
 MAX_AGE_DAYS = 90

@@ -10,6 +10,7 @@ Returns items compatible with the main pipeline (same dict format as fetcher.py)
 """
 import hashlib
 import re
+import html
 import requests
 import feedparser
 from datetime import datetime, timezone, timedelta
@@ -32,7 +33,7 @@ LUMA_CALENDARS = [
 
 def _strip_html(text: str) -> str:
     text = re.sub(r'<[^>]+>', '', text)
-    text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    text = html.unescape(text)
     return re.sub(r'\s+', ' ', text).strip()
 
 

@@ -8,6 +8,7 @@ Falls back gracefully if Gemini is unavailable.
 import json
 import os
 import re
+import html
 import time
 import requests
 from datetime import datetime, timezone
@@ -191,8 +192,8 @@ def _call_gemini(article: dict) -> dict | None:
 
 def _fallback_tip(article: dict) -> dict:
     """Build a minimal tip dict from the article without BEFORE/AFTER code."""
-    title = article.get("title", "Salesforce Tip of the Day")
-    summary = (article.get("summary") or "")[:300]
+    title = html.unescape(article.get("title", "Salesforce Tip of the Day"))
+    summary = html.unescape((article.get("summary") or "")[:300])
     url = article.get("url", "")
     return {
         "title": title[:60],
