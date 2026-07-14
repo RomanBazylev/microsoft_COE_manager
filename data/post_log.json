@@ -3170,5 +3170,36 @@
     "posted_at": "2026-07-13T11:21:48.676456+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "How to Connect Claude to Salesforce Using MCP and OAuth 2.0",
+    "url": "https://salesforcemonday.com/2026/06/22/salesforce-claude-integration-mcp-oauth/",
+    "summary": "Most conversations about AI and Salesforce stop at the wrong place. They describe what AI could do inside a CRM. Then they leave architects to figure out the how. This post skips the pitch. It covers ",
+    "published": "Mon, 22 Jun 2026 12:05:50 +0000",
+    "id": "7071b99cf3ab6ec94f0e1ecb2f86df97",
+    "relevance_score": 1.0,
+    "suggested_comment": "Most conversations about AI and Salesforce stop at the wrong place. They describe what AI could do inside a CRM. Then they leave architects to figure out the how. This post skips the pitch. It covers ",
+    "feed_domain": "salesforcemonday.com",
+    "tip_data": {
+      "title": "How to Connect Claude to Salesforce Using MCP and OAuth 2.0",
+      "subtitle": "Most conversations about AI and Salesforce stop at the wrong place. They describe what AI could do inside a CRM. Then th",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Most conversations about AI and Salesforce stop at the wrong place. They describe what AI could do inside a CRM. Then they leave architects to figure out the how. This post skips the pitch. It covers ",
+      "source_url": "https://salesforcemonday.com/2026/06/22/salesforce-claude-integration-mcp-oauth/",
+      "source_domain": "salesforcemonday.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-07-14.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-07-14.png",
+    "posted_at": "2026-07-14T09:57:22.607794+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
