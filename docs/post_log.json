@@ -3912,5 +3912,36 @@
     "posted_at": "2026-07-27T11:33:18.804578+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "topic-of-the-day",
+    "source": "generated_tip",
+    "title": "Build with React on Salesforce: Multi-Framework Is Now GA",
+    "url": "https://developer.salesforce.com/blogs/2026/07/build-with-react-on-salesforce-multi-framework-is-now-ga",
+    "summary": "Ship production-ready React apps natively on Salesforce — with authentication, security, and governance built in. Here's what changed in Multi-Framework since beta, and how to migrate. The post Build ",
+    "published": "Thu, 16 Jul 2026 15:00:01 +0000",
+    "id": "9cd8898ac0c6431c76e6166c743e4097",
+    "relevance_score": 1.0,
+    "suggested_comment": "Ship production-ready React apps natively on Salesforce — with authentication, security, and governance built in. Here's what changed in Multi-Framework since beta, and how to migrate. The post Build ",
+    "feed_domain": "developer.salesforce.com",
+    "tip_data": {
+      "title": "Build with React on Salesforce: Multi-Framework Is Now GA",
+      "subtitle": "Ship production-ready React apps natively on Salesforce — with authentication, security, and governance built in. Here's",
+      "label": "Tip of the Day",
+      "before_code": null,
+      "before_label": null,
+      "after_code": null,
+      "after_label": null,
+      "use_cases": [],
+      "benefit": "Ship production-ready React apps natively on Salesforce — with authentication, security, and governance built in. Here's what changed in Multi-Framework since beta, and how to migrate. The post Build ",
+      "source_url": "https://developer.salesforce.com/blogs/2026/07/build-with-react-on-salesforce-multi-framework-is-now-ga",
+      "source_domain": "developer.salesforce.com"
+    },
+    "has_code": false,
+    "png_filename": "tip_2026-07-28.png",
+    "png_url": "https://romanbazylev.github.io/microsoft_COE_manager/tip_2026-07-28.png",
+    "posted_at": "2026-07-28T10:33:23.952425+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
