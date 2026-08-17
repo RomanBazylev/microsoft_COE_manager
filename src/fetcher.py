@@ -44,6 +44,7 @@ FEEDS = {
         "https://www.salesforce.com/blog/feed/",
         "https://www.salesforceben.com/feed/",
         "https://automationchampion.com/feed/",
+        "https://routine-automation.com/blog/feed/",  # Agentforce, partner insights, AI/CRM
     ],
     "need-help": [
         "https://salesforce.stackexchange.com/feeds",
@@ -73,6 +74,7 @@ FEEDS = {
         "https://www.sfdc99.com/feed/",                 # Apex/admin tips for beginners
         "https://www.salesforceweek.ly/feed/",          # curated weekly digest
         "https://nebulaconsulting.co.uk/insights/feed/", # advanced Apex patterns
+        "https://routine-automation.com/blog/feed/",  # Agentforce overviews, SI/partner insights
         # YouTube: main Salesforce channel (not used in other channels)
         "https://www.youtube.com/feeds/videos.xml?channel_id=UCKORm8sxh3cheBpqs0jkhDA",
     ],

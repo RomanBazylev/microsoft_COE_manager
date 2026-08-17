@@ -89,6 +89,7 @@ SalesforceIntCOE/
 | salesforce.com/blog | RSS |
 | salesforceben.com | RSS |
 | automationchampion.com | RSS |
+| routine-automation.com/blog | RSS |
 
 ### `#need-help`
 | Source | Type |
@@ -108,6 +109,7 @@ SalesforceIntCOE/
 | salesforce.com/blog | RSS |
 | automationchampion.com | RSS |
 | salesforceben.com | RSS |
+| routine-automation.com/blog | RSS |
 
 **Feed limits:** max 5 entries per feed; freshness window = 90 days.  
 **Reddit guard:** skip entries where `"reddit.com" in link and "/comments/" not in link` (avoids subreddit root URLs).

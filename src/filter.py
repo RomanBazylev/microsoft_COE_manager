@@ -34,6 +34,7 @@ CHANNEL_KEYWORDS: dict[str, list[str]] = {
         "salesforce", "release", "update", "new feature", "spring", "summer",
         "winter", "admin", "flow", "automation", "einstein", "crm",
         "platform", "announcement",
+        "agentforce", "data cloud", "implementation", "partner",
     ],
     "need-help": [
         "error", "issue", "problem", "help", "how to", "solution",
