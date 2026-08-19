@@ -141,6 +141,12 @@
     .src-also { font-size:10px; color:var(--muted); margin-top:5px; display:flex; flex-wrap:wrap; align-items:center; gap:3px; }
     .src-status { font-size:11px; font-weight:500; margin-top:6px; }
     .src-status.ok { color:var(--green); } .src-status.stale { color:var(--muted); }
+    .health-summary { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    .health-pill { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:9px 13px; box-shadow:var(--sh); font-size:12px; }
+    .health-pill strong { font-family:var(--mono); margin-right:5px; }
+    .health-issues { margin-bottom:22px; padding:14px 16px; border:1px solid var(--border); border-radius:var(--r); background:var(--surface); }
+    .health-issue { font-size:11px; color:var(--muted); padding:4px 0; overflow-wrap:anywhere; }
+    .health-issue.error { color:var(--red); } .health-issue.empty { color:var(--amber); }
 
     #toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 18px; font-size:13px; box-shadow:var(--sh-md); opacity:0; transform:translateY(8px); transition:opacity .2s,transform .2s; z-index:999; pointer-events:none; }
     #toast.show { opacity:1; transform:translateY(0); }
@@ -257,6 +263,7 @@
     <div class="filter-sep"></div>
     <div class="filter-group" id="filter-source">
       <button class="chip active" data-group="source" data-val="all">All Sources</button>
+      <button class="chip" data-group="source" data-val="official">Official</button>
       <button class="chip" data-group="source" data-val="rss">RSS</button>
       <button class="chip" data-group="source" data-val="youtube">YouTube</button>
     </div>
@@ -285,6 +292,7 @@
 
   <div class="tab-panel" id="tab-sources">
   <div class="section-hdr"><span class="section-title">Content Sources</span><hr /></div>
+  <div id="feed-health"></div>
   <div class="sources-grid" id="sources-grid"></div>
   </div><!-- /tab-sources -->
 
@@ -295,6 +303,8 @@ var REPO_OWNER  = 'RomanBazylev';
 var REPO_NAME   = 'microsoft_COE_manager';
 var WORKFLOW_ID = 'autoposter.yml';
 var LOG_URL     = './post_log.json';
+var HEALTH_URL  = './feed_health.json';
+var LAST_RUN_URL = './last_run.json';
 var PAT_KEY     = 'sf_coe_gh_pat';
 var THEME_KEY   = 'sf_coe_theme';
 
@@ -313,27 +323,27 @@ var CH_COLOR_DARK = {
   'need-help':'#fbbf24','meetup-events':'#f87171','topic-of-the-day':'#67e8f9'
 };
 var SOURCES = [
-  {d:'salesforce.com/blog (certifications)',t:'rss',ch:['certification']},
-  {d:'salesforce.com/blog',t:'rss',ch:['salesforce-rss','topic-of-the-day']},
-  {d:'salesforce.com/blog (events)',t:'rss',ch:['meetup-events']},
-  {d:'focusonforce.com',t:'rss',ch:['certification']},
-  {d:'sfdc99.com',t:'rss',ch:['certification']},
-  {d:'salesforceben.com',t:'rss',ch:['certification','salesforce-rss','topic-of-the-day']},
+  {d:'Salesforce Releases hub',t:'official',ch:['salesforce-rss','certification'],u:'https://www.salesforce.com/releases/',official:true},
+  {d:'Salesforce News',t:'rss',ch:['salesforce-rss','meetup-events'],u:'https://www.salesforce.com/news/feed/',official:true},
+  {d:'Salesforce Blog',t:'rss',ch:['salesforce-rss'],u:'https://www.salesforce.com/blog/feed/',official:true},
+  {d:'Salesforce Admins',t:'rss',ch:['salesforce-rss','certification','topic-of-the-day'],u:'https://admin.salesforce.com/feed',official:true},
+  {d:'Salesforce Developers',t:'rss',ch:['playground','topic-of-the-day'],u:'https://developer.salesforce.com/blogs/feed',official:true},
+  {d:'Salesforce Events',t:'official',ch:['meetup-events'],u:'https://www.salesforce.com/events/',official:true},
+  {d:'salesforce.stackexchange.com',t:'rss',ch:['need-help'],u:'https://salesforce.stackexchange.com/feeds'},
+  {d:'salesforceben.com',t:'rss',ch:['certification','salesforce-rss','meetup-events']},
+  {d:'sfdc99.com',t:'rss',ch:['certification','topic-of-the-day']},
   {d:'adminhero.com',t:'rss',ch:['certification']},
   {d:'andyinthecloud.com',t:'rss',ch:['playground']},
   {d:'unofficialsf.com',t:'rss',ch:['playground']},
-  {d:'jitendrazaa.com',t:'rss',ch:['playground']},
-  {d:'reddit.com/r/salesforcedev',t:'rss',ch:['playground']},
-  {d:'reddit.com/r/salesforce',t:'rss',ch:['need-help']},
-  {d:'salesforce.stackexchange.com',t:'rss',ch:['need-help']},
-  {d:'developer.salesforce.com/blogs',t:'rss',ch:['need-help']},
-  {d:'automationchampion.com',t:'rss',ch:['salesforce-rss','topic-of-the-day']},
-  {d:'routine-automation.com',t:'rss',ch:['salesforce-rss','topic-of-the-day']},
-  {d:'youtube.com (SF Admins)',t:'youtube',ch:['certification']},
-  {d:'youtube.com (SF Developers)',t:'youtube',ch:['playground']}
+  {d:'automationchampion.com',t:'rss',ch:['salesforce-rss']},
+  {d:'salesforcemonday.com',t:'rss',ch:['topic-of-the-day']},
+  {d:'sfdcstop.com',t:'rss',ch:['topic-of-the-day']},
+  {d:'nebulaconsulting.co.uk',t:'rss',ch:['topic-of-the-day']}
 ];
 
 var allItems = [];
+var feedHealth = [];
+var lastRun = null;
 var filters  = {status:'all',source:'all',channel:'all'};
 
 (function(){
@@ -364,6 +374,23 @@ async function loadLog(){
   }
 }
 
+async function loadRunArtifacts(){
+  try {
+    var responses = await Promise.all([
+      fetch(HEALTH_URL + '?t=' + Date.now()),
+      fetch(LAST_RUN_URL + '?t=' + Date.now())
+    ]);
+    if(responses[0].ok) feedHealth = await responses[0].json();
+    if(responses[1].ok) lastRun = await responses[1].json();
+    renderFeedHealth();
+    renderSources();
+    renderStats();
+  } catch(e) {
+    document.getElementById('feed-health').innerHTML =
+      '<div class="health-issues"><div class="health-issue error">Feed health artifact unavailable: '+esc(e.message)+'</div></div>';
+  }
+}
+
 function renderStats(){
   var posted = allItems.filter(function(i){return i.status==='posted';});
   var failed = allItems.filter(function(i){return i.status==='failed';});
@@ -382,7 +409,8 @@ function renderStats(){
   document.getElementById('stat-last').textContent     = last ? relTime(last.posted_at) : '—';
   var rEl = document.getElementById('stat-rate');
   rEl.className = 'stat-val '+(rate>=90?'c-green':rate>=70?'c-blue':'c-amber');
-  var lastFull = last ? new Date(last.posted_at).toLocaleString('en-GB') : 'never';
+  var runDate = lastRun && lastRun.run_at ? lastRun.run_at : (last ? last.posted_at : null);
+  var lastFull = runDate ? new Date(runDate).toLocaleString('en-GB') : 'never';
   document.getElementById('last-run-text').textContent = 'Last run: '+lastFull;
 }
 
@@ -414,7 +442,10 @@ function renderTable(){
       if(fst==='dry-run'){ if(st!=='dry-run'&&st!=='dry_run') return false; }
       else if(st!==fst) return false;
     }
-    if(filters.source !=='all'&&item.source !==filters.source)  return false;
+    if(filters.source !=='all'){
+      if(filters.source==='official' && !item.official && String(item.source||'').indexOf('official_')!==0) return false;
+      if(filters.source!=='official' && item.source!==filters.source) return false;
+    }
     if(filters.channel!=='all'&&item.channel!==filters.channel) return false;
     return true;
   });
@@ -428,8 +459,9 @@ function renderTable(){
       : '<span class="badge badge-failed">✕ failed</span>';
     var chBadge = '<span class="ch-badge '+(CH_CSS[item.channel]||'')+'">'+esc(item.channel)+'</span>';
     var isYT = item.source==='youtube';
+    var isOfficial = !!item.official || String(item.source||'').indexOf('official_')===0;
     var domain = item.feed_domain||(isYT?'youtube.com':'');
-    var src = '<span class="src-tag'+(isYT?' yt':'')+'">'+(isYT?'▶ YT':'◉ RSS')+'</span>';
+    var src = '<span class="src-tag'+(isYT?' yt':'')+'">'+(isYT?'▶ YT':isOfficial?'◆ OFFICIAL':'◉ RSS')+'</span>';
     var pubDate = item.published ? (function(){ try { return new Date(item.published).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(e){ return ''; } })() : '';
     var title = item.url
       ? '<a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">'+esc(item.title)+'</a>'
@@ -463,15 +495,21 @@ function renderSources(){
     if(!chSources.length) return '';
     var cards = chSources.map(function(s){
       var isActive = active.some(function(d){ var k=s.d.toLowerCase().split(' ')[0]; return d&&(k.includes(d)||d.includes(k)); });
-      var icon = '<div class="src-icon '+(s.t==='youtube'?'yt':'rss')+'">'+(s.t==='youtube'?'YT':'RSS')+'</div>';
-      var status = isActive ? '<div class="src-status ok">● Active</div>' : '<div class="src-status stale">○ No recent posts</div>';
+      var health = s.u ? feedHealth.find(function(h){return h.url===s.u;}) : null;
+      var healthy = health && (health.status==='ok'||health.status==='degraded');
+      var iconLabel = s.t==='official' ? 'SF' : (s.t==='youtube'?'YT':'RSS');
+      var icon = '<div class="src-icon '+(s.t==='youtube'?'yt':'rss')+'">'+iconLabel+'</div>';
+      var status = health
+        ? '<div class="src-status '+(healthy?'ok':'stale')+'">● '+esc(health.status)+' · '+(health.entries||0)+' entries</div>'
+        : (isActive ? '<div class="src-status ok">● Active</div>' : '<div class="src-status stale">○ No recent posts</div>');
+      var official = s.official ? '<div class="src-also">Official Salesforce source</div>' : '';
       var others = s.ch.filter(function(c){ return c !== ch; });
       var alsoHtml = others.length
         ? '<div class="src-also">also in: '+others.map(function(c){
             return '<span class="ch-badge '+(CH_CSS[c]||'')+'" style="font-size:10px;padding:2px 6px">'+c+'</span>';
           }).join('')+'</div>'
         : '';
-      return '<div class="source-card">'+icon+'<div style="flex:1;min-width:0"><div class="src-domain">'+esc(s.d)+'</div>'+alsoHtml+status+'</div></div>';
+      return '<div class="source-card">'+icon+'<div style="flex:1;min-width:0"><div class="src-domain">'+esc(s.d)+'</div>'+official+alsoHtml+status+'</div></div>';
     }).join('');
     return '<div class="src-ch-section">'
       +'<div class="src-ch-hdr"><span class="ch-badge '+(CH_CSS[ch]||'')+'">'+ch+'</span><hr /></div>'
@@ -479,6 +517,27 @@ function renderSources(){
       +'</div>';
   }).join('');
   document.getElementById('sources-grid').innerHTML = html;
+}
+
+function renderFeedHealth(){
+  var host = document.getElementById('feed-health');
+  if(!feedHealth.length){
+    host.innerHTML = '<div class="health-issues"><div class="health-issue">No feed-health data yet. It will appear after the next workflow run.</div></div>';
+    return;
+  }
+  var counts={ok:0,degraded:0,empty:0,error:0};
+  feedHealth.forEach(function(h){counts[h.status]=(counts[h.status]||0)+1;});
+  var pills = [
+    ['ok','Healthy','c-green'],['degraded','Degraded','c-amber'],
+    ['empty','Empty','c-amber'],['error','Errors','c-red']
+  ].map(function(x){return '<div class="health-pill '+x[2]+'"><strong>'+counts[x[0]]+'</strong>'+x[1]+'</div>';}).join('');
+  var issues = feedHealth.filter(function(h){return h.status!=='ok';});
+  var issueHtml = issues.length
+    ? '<div class="health-issues">'+issues.map(function(h){
+        return '<div class="health-issue '+esc(h.status)+'"><strong>'+esc(h.status.toUpperCase())+'</strong> · '+esc(h.source||h.url)+' · '+esc(h.error||'No entries returned')+'</div>';
+      }).join('')+'</div>'
+    : '';
+  host.innerHTML='<div class="health-summary">'+pills+'</div>'+issueHtml;
 }
 
 document.getElementById('filter-bar').addEventListener('click',function(e){
@@ -611,7 +670,9 @@ renderSchedule();
 setInterval(renderSchedule, 30000); // update countdown every 30s
 
 loadLog();
+loadRunArtifacts();
 setInterval(loadLog, 5*60*1000);
+setInterval(loadRunArtifacts, 5*60*1000);
 </script>
 </body>
 </html>

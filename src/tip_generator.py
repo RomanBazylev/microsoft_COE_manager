@@ -94,6 +94,15 @@ def _save_tip_used(mapping: dict) -> None:
     TIP_USED_IDS_PATH.write_text(json.dumps(pruned, indent=2), encoding="utf-8")
 
 
+def mark_tip_delivered(article_id: str) -> None:
+    """Persist tip rotation state only after a successful Teams delivery."""
+    if not article_id:
+        return
+    used = _load_tip_used()
+    used[article_id] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    _save_tip_used(used)
+
+
 def pick_best_article(candidates: list[dict]) -> dict | None:
     """
     Return the highest-scoring topic-of-the-day item, preferring RSS over YouTube.
@@ -223,13 +232,6 @@ def generate_tip_item(article: dict) -> dict:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     png_filename = f"tip_{today}.png"
     png_url = f"{GITHUB_PAGES_BASE}/{png_filename}"
-
-    # Mark this article as used so the same article won't be tipped again for TIP_DEDUPE_DAYS
-    article_id = article.get("id", "")
-    if article_id:
-        used = _load_tip_used()
-        used[article_id] = today
-        _save_tip_used(used)
 
     return {
         # poster-compatible fields

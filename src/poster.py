@@ -35,7 +35,7 @@ CHANNEL_WEBHOOKS = {
     "topic-of-the-day": "TEAMS_WEBHOOK_TOPIC_OF_THE_DAY",
 }
 
-SOURCE_EMOJI = {"rss": "📰", "youtube": "▶️"}
+SOURCE_EMOJI = {"rss": "📰", "youtube": "▶️", "official_release": "📣"}
 
 
 def _normalized_webhook_url(raw_url: str) -> str:
@@ -294,7 +294,7 @@ def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
     try:
         resp = requests.post(webhook_url, json=payload, timeout=15)
         resp.raise_for_status()
-        print(f"    [{webhook_type}] ✅ posted")
+        print(f"    [{webhook_type}] posted")
         return True, ""
     except requests.HTTPError as e:
         status = e.response.status_code if e.response is not None else "unknown"
@@ -311,27 +311,47 @@ def post_to_teams(webhook_url: str, item: dict) -> tuple[bool, str]:
             msg = f"HTTP {status} ({webhook_type}) | URL={_redacted_url(webhook_url)}"
             if body:
                 msg += f" | response={body}"
-        print(f"    [{webhook_type}] ❌ failed: {msg}")
+        print(f"    [{webhook_type}] failed: {msg}")
         return False, msg
     except Exception as e:
         err = str(e)
-        print(f"    [{webhook_type}] ❌ failed: {err}")
+        print(f"    [{webhook_type}] failed: {err}")
         return False, err
+
+
+def apply_channel_caps(items: list[dict]) -> list[dict]:
+    """Keep curated content capped while mandatory notices always pass."""
+    by_channel: dict[str, list] = defaultdict(list)
+    for item in items:
+        by_channel[item["channel"]].append(item)
+
+    selected: list[dict] = []
+    for channel in sorted(by_channel):
+        ch_items = by_channel[channel]
+        mandatory = [item for item in ch_items if item.get("must_post")]
+        curated = [item for item in ch_items if not item.get("must_post")]
+        sort_key = lambda item: (
+            item.get("relevance_score", 0),
+            item.get("source_priority", 0),
+            item.get("published") or "",
+            item.get("id", ""),
+        )
+        mandatory.sort(key=sort_key, reverse=True)
+        curated.sort(key=sort_key, reverse=True)
+        selected.extend(mandatory)
+        selected.extend(curated[:MAX_PER_CHANNEL])
+    return selected
 
 
 def run(items: list[dict]) -> list[dict]:
     dry_run = os.getenv("DRY_RUN", "false").lower() == "true"
     if dry_run:
-        print("[Poster] 🔍 DRY RUN — no posts will be sent to Teams")
+        print("[Poster] DRY RUN - no posts will be sent to Teams")
 
-    # Apply per-channel cap: sort by score, keep top MAX_PER_CHANNEL per channel
-    by_channel: dict[str, list] = defaultdict(list)
-    for item in items:
-        by_channel[item["channel"]].append(item)
-    capped: list[dict] = []
-    for ch_items in by_channel.values():
-        ch_items.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
-        capped.extend(ch_items[:MAX_PER_CHANNEL])
+    capped = apply_channel_caps(items)
+    deferred = len(items) - len(capped)
+    if deferred:
+        print(f"[Poster] Deferred {deferred} curated items due to channel caps; they remain retryable")
 
     results = []  # all processed items: posted + failed
     warned: set[str] = set()
@@ -345,7 +365,7 @@ def run(items: list[dict]) -> list[dict]:
         webhook_url = _normalized_webhook_url(os.getenv(secret_name) or "")
         if not webhook_url:
             if secret_name not in warned:
-                print(f"[Poster] ⚠️  {secret_name} not set — skipping #{channel}")
+                print(f"[Poster] WARNING: {secret_name} not set - skipping #{channel}")
                 warned.add(secret_name)
             results.append({
                 **item,
@@ -355,7 +375,7 @@ def run(items: list[dict]) -> list[dict]:
             })
             continue
 
-        print(f"  → #{channel}: {item['title'][:55]}")
+        print(f"  -> #{channel}: {item['title'][:55]}")
 
         if dry_run:
             print(f"    [DRY RUN] would post to {secret_name}")

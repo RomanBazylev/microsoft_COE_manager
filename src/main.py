@@ -8,6 +8,7 @@ Env vars:
   DRY_RUN=true          — log only, no Teams posts
   CHANNELS_FILTER=a,b   — only process listed channels (comma-separated)
 """
+import os
 import sys
 from pathlib import Path
 
@@ -20,6 +21,8 @@ import poster
 import tip_generator
 import tip_renderer
 import events_fetcher
+import official_fetcher
+import artifacts
 
 
 def _channels_filter() -> set[str] | None:
@@ -37,31 +40,40 @@ def main():
     print("=" * 50)
 
     channels = _channels_filter()
+    dry_run = os.getenv("DRY_RUN", "false").lower() == "true"
+    official_only = os.getenv("OFFICIAL_ONLY", "false").lower() == "true"
+    trigger = os.getenv("GITHUB_EVENT_NAME", "local")
     if channels:
         print(f"[Config] CHANNELS_FILTER = {channels}")
+    if official_only:
+        print("[Config] OFFICIAL_ONLY = true")
 
     # Step 1: Fetch
     print("\n[1/5] Fetching content...")
-    items = fetcher.run()
+    items = fetcher.run(official_only=official_only)
+    feed_health = fetcher.get_last_health()
+
+    official_items, official_health = official_fetcher.run()
+    items.extend(official_items)
+    feed_health.extend(official_health)
 
     # Also fetch dedicated events if meetup-events channel is active
-    events_running = channels is None or "meetup-events" in channels
+    events_running = not official_only and (channels is None or "meetup-events" in channels)
     if events_running:
         event_items = events_fetcher.run()
         items.extend(event_items)
+        feed_health.extend(events_fetcher.get_last_health())
 
     if channels:
         items = [i for i in items if i.get("channel") in channels]
+    if official_only:
+        items = [i for i in items if i.get("official")]
     print(f"      Total fetched: {len(items)}")
 
-    if not items:
-        print("No items fetched, exiting.")
-        return
-
-    # Save raw topic-of-the-day items BEFORE filter marks them as seen.
+    # Keep raw topic-of-the-day items so the daily tip can rotate recent sources.
     # Tip card generation needs the best RECENT article regardless of seen_ids
     # (blogs don't publish daily; seen_ids would starve the tip queue after the first run).
-    tip_running = channels is None or "topic-of-the-day" in channels
+    tip_running = not official_only and (channels is None or "topic-of-the-day" in channels)
     raw_topic_items = (
         [i for i in items if i.get("channel") == "topic-of-the-day"]
         if tip_running else []
@@ -90,10 +102,13 @@ def main():
             # Remove the original article from approved if it happened to be new this run
             approved = [i for i in approved if i.get("id") != best_article.get("id")]
 
-            # Render PNG
-            png_path = tip_renderer.render_tip(tip_item)
-            if png_path:
-                print(f"      PNG rendered → {tip_item['png_url']}")
+            # Do not generate/overwrite dashboard images during a dry run.
+            png_path = None if dry_run else tip_renderer.render_tip(tip_item)
+            if dry_run:
+                print("      DRY RUN - tip image rendering skipped")
+                tip_item["png_url"] = ""
+            elif png_path:
+                print(f"      PNG rendered -> {tip_item['png_url']}")
             else:
                 print("      PNG render failed — tip will post as text card (no image)")
                 tip_item["png_url"] = ""
@@ -104,14 +119,32 @@ def main():
     else:
         print("      Skipped (CHANNELS_FILTER excludes topic-of-the-day)")
 
-    if not approved:
-        print("Nothing to post, exiting.")
-        return
-
     # Step 4: Post to Teams
     print("\n[4/5] Posting to Teams...")
-    results = poster.run(approved)
-    poster.append_to_log(results)
+    results = poster.run(approved) if approved else []
+    if not approved:
+        print("Nothing to post.")
+
+    # Delivery state is acknowledged only after Teams accepted the post.
+    content_filter.mark_delivered(results)
+    for result in results:
+        if result.get("status") == "posted" and result.get("source") == "generated_tip":
+            tip_generator.mark_tip_delivered(result.get("id", ""))
+
+    # Dry runs are side-effect free for both delivery state and the audit log.
+    if results and not dry_run:
+        poster.append_to_log(results)
+
+    summary = artifacts.build_run_summary(
+        trigger=trigger,
+        dry_run=dry_run,
+        fetched=len(items),
+        approved=len(approved),
+        results=results,
+        feed_health=feed_health,
+    )
+    artifacts.write_run_artifacts(summary, feed_health)
+    print("[Artifacts] Wrote data/last_run.json and data/feed_health.json")
 
     posted_count = sum(1 for r in results if r["status"] == "posted")
     failed_count = sum(1 for r in results if r["status"] == "failed")

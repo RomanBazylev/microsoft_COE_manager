@@ -6,11 +6,11 @@
 ## Как это работает
 
 ```
-RSS / YouTube / Trailhead
+Official Releases / Salesforce RSS / Events / Q&A
         ↓
    Fetcher (Python)          ← собирает контент
         ↓
-   AI Filter (Gemini)        ← оценивает релевантность, отсекает старьё (>90 дней)
+   Priority Filter           ← mandatory official updates bypass normal scoring
         ↓
    Router                    ← маппинг на нужный канал
         ↓
@@ -21,7 +21,7 @@ RSS / YouTube / Trailhead
 
 **GitHub Actions** запускает пайплайн по расписанию.
 **GitHub Secrets** хранят все чувствительные данные.
-**GitHub Pages** отдаёт дашборд.
+**GitHub Pages** отдаёт дашборд, включая состояние каждого фида и последнего запуска.
 
 ---
 
@@ -42,7 +42,6 @@ cd sf-autoposter
 | Secret name                      | Где взять                                    |
 |----------------------------------|----------------------------------------------|
 | `GEMINI_API_KEY`                 | console.cloud.google.com → AI Studio → API Keys |
-| `YOUTUBE_API_KEY`                | console.cloud.google.com → YouTube Data API v3 |
 | `TEAMS_WEBHOOK_CERTIFICATION`    | Teams → канал → … → Connectors → Incoming Webhook |
 | `TEAMS_WEBHOOK_PLAYGROUND`       | аналогично                                   |
 | `TEAMS_WEBHOOK_SALESFORCE_RSS`   | аналогично                                   |
@@ -55,7 +54,7 @@ cd sf-autoposter
 
 ### 3. Включить GitHub Pages
 
-**Settings → Pages → Source: GitHub Actions**
+**Settings → Pages → Source: GitHub Actions**. Workflow deploys `docs/` after every run.
 
 После первого запуска дашборд будет доступен по адресу:
 `https://YOUR_ORG.github.io/sf-autoposter/`
@@ -83,8 +82,8 @@ git push
 
 ```yaml
 schedule:
-  - cron: "0 8 * * 1,3,5"   # Пн/Ср/Пт в 10:00 Warsaw
-  - cron: "0 7 * * *"        # Ежедневно для канала Events
+  - cron: "0 8 * * 1-5"      # будни: все каналы
+  - cron: "0 8 * * 0,6"      # выходные: только официальные источники
 ```
 
 ---
@@ -95,7 +94,6 @@ schedule:
 pip install -r requirements.txt
 
 export GEMINI_API_KEY="AIza..."
-export YOUTUBE_API_KEY="AIza..."
 export TEAMS_WEBHOOK_CERTIFICATION="https://..."
 
 python src/main.py
@@ -112,14 +110,18 @@ sf-autoposter/
 │       └── autoposter.yml    # CI/CD расписание + деплой Pages
 ├── src/
 │   ├── main.py               # точка входа, оркестрация
-│   ├── fetcher.py            # сбор контента из RSS, YouTube
-│   ├── filter.py             # AI-фильтрация через Claude API
+│   ├── fetcher.py            # RSS + source metadata + health
+│   ├── official_fetcher.py   # Salesforce Releases hub
+│   ├── filter.py             # scoring, priority routing, delivered IDs
+│   ├── artifacts.py          # dashboard JSON artifacts
 │   └── poster.py             # постинг в Teams + лог
 ├── docs/
 │   └── index.html            # GitHub Pages дашборд
 ├── data/
 │   ├── post_log.json         # лог всех публикаций (коммитится ботом)
-│   └── seen_ids.json         # дедупликация (коммитится ботом)
+│   ├── seen_ids.json         # только успешно доставленные IDs
+│   ├── feed_health.json      # здоровье источников
+│   └── last_run.json         # итог последнего запуска
 ├── requirements.txt
 └── README.md
 ```
@@ -128,8 +130,8 @@ sf-autoposter/
 
 ## Добавить новый канал
 
-1. Добавь канал в `src/fetcher.py` → `FEEDS` или `YOUTUBE_CHANNELS`
-2. Добавь описание в `src/filter.py` → `CHANNEL_DESCRIPTIONS`
+1. Добавь канал в `src/fetcher.py` → `FEEDS`
+2. Добавь ключевые слова и приоритет в `src/filter.py`
 3. Добавь маппинг в `src/poster.py` → `CHANNEL_WEBHOOKS`
 4. Добавь Secret в GitHub Settings
 5. Добавь кнопку фильтра в `docs/index.html`
@@ -141,7 +143,14 @@ sf-autoposter/
 | Переменная                | Описание                          |
 |---------------------------|-----------------------------------|
 | `GEMINI_API_KEY`          | Gemini API для AI-фильтрации      |
-| `YOUTUBE_API_KEY`         | YouTube Data API v3               |
 | `TEAMS_WEBHOOK_*`         | Incoming Webhook URL для каждого канала |
 
 Все хранятся в **GitHub Secrets** и передаются в Actions через `env:`.
+
+## Гарантии доставки
+
+- Official release/security items получают `must_post`, обходят relevance threshold и лимит curated-постов.
+- URL-дубликаты выбираются по source/channel priority, а не по порядку фидов.
+- `seen_ids.json` обновляется только после успешного ответа Teams. Failed и capped items повторяются.
+- `DRY_RUN=true` не меняет delivery state или post log.
+- Releases hub отслеживает новые ссылки и изменения названий ресурсов; RSS health публикуется на dashboard.

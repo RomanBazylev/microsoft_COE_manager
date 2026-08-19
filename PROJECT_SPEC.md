@@ -6,19 +6,19 @@
 
 ## Overview
 
-The pipeline runs on GitHub Actions, fetches RSS/YouTube feeds, scores each article for relevance, optionally generates an AI summary (Gemini), and posts Adaptive Cards to the correct Teams channels via Power Automate webhooks.
+The pipeline runs on GitHub Actions, polls official Salesforce RSS, the Releases hub and Events catalog, scores curated articles, and posts to the correct Teams channels. Mandatory official release/security resources bypass ordinary relevance and channel caps.
 
 ```
 RSS/YouTube feeds
       │
       ▼
-  fetcher.py  ──→  filter.py  ──→  poster.py  ──→  Teams channels
+  fetchers     ──→  filter.py  ──→  poster.py  ──→  Teams channels
   (collect)         (score +         (send
                     AI summary)    Adaptive Card)
       │                                │
       ▼                                ▼
-data/seen_ids.json            data/post_log.json
-(dedup state)                 (audit log → GitHub Pages)
+data/seen_ids.json            data/post_log.json + feed_health.json
+(successful deliveries)      (audit/health → GitHub Pages)
 ```
 
 ---
@@ -29,8 +29,10 @@ data/seen_ids.json            data/post_log.json
 SalesforceIntCOE/
 ├── src/
 │   ├── main.py          # Entrypoint — orchestrates the 3-step pipeline
-│   ├── fetcher.py       # Fetches RSS + YouTube RSS feeds
-│   ├── filter.py        # Keyword scoring + Gemini AI summaries
+│   ├── fetcher.py       # RSS, source metadata, routing and health
+│   ├── official_fetcher.py # Salesforce Releases hub poller
+│   ├── artifacts.py     # Last-run and feed-health JSON
+│   ├── filter.py        # Priority dedup, scoring + Gemini summaries
 │   └── poster.py        # Posts to Teams via webhooks
 ├── data/
 │   ├── post_log.json    # Full audit log of all posted/failed items
@@ -58,7 +60,7 @@ SalesforceIntCOE/
 | `#meetup-events` | `TEAMS_WEBHOOK_MEETUP_EVENTS` | Events, webinars, conferences |
 | `#topic-of-the-day` | `TEAMS_WEBHOOK_TOPIC_OF_THE_DAY` | Release notes, platform updates, Einstein |
 
-**Max posts per channel per run:** 2 (anti-spam, configured in `poster.py → MAX_PER_CHANNEL`).
+**Max curated posts per channel per run:** 2. `must_post` official resources bypass this cap.
 
 ---
 
@@ -67,51 +69,51 @@ SalesforceIntCOE/
 ### `#certification`
 | Source | Type |
 |---|---|
-| salesforce.com/blog/category/certifications | RSS |
-| focusonforce.com | RSS |
 | sfdc99.com | RSS |
 | salesforceben.com | RSS |
 | adminhero.com | RSS |
-| YouTube: Salesforce Admins (`UCvlZKtezcjB5O8B5QKABo5A`) | YouTube RSS |
+| admin.salesforce.com (credential/Trailhead routing) | Official RSS |
+| Salesforce Releases / Trailhead Release Highlights | Official HTML poller |
 
 ### `#playground`
 | Source | Type |
 |---|---|
 | andyinthecloud.com | RSS |
 | unofficialsf.com | RSS |
-| jitendrazaa.com | RSS |
-| reddit.com/r/salesforcedev | RSS |
-| YouTube: Salesforce Developers (`UC-OBnBKJdVSTCLkCzj1CRMQ`) | YouTube RSS |
+| developer.salesforce.com/blogs | Official RSS |
 
 ### `#salesforce-rss`
 | Source | Type |
 |---|---|
 | salesforce.com/blog | RSS |
+| salesforce.com/news | Official RSS |
+| admin.salesforce.com | Official RSS |
+| salesforce.com/releases | Official HTML poller |
 | salesforceben.com | RSS |
 | automationchampion.com | RSS |
-| routine-automation.com/blog | RSS |
 
 ### `#need-help`
 | Source | Type |
 |---|---|
 | salesforce.stackexchange.com | RSS |
-| reddit.com/r/salesforce | RSS |
-| developer.salesforce.com/blogs | RSS |
 
 ### `#meetup-events`
 | Source | Type |
 |---|---|
-| salesforce.com/blog/category/events | RSS |
+| salesforce.com/events | Official HTML poller |
+| salesforceben.com/category/events | RSS |
 
 ### `#topic-of-the-day`
 | Source | Type |
 |---|---|
-| salesforce.com/blog | RSS |
-| automationchampion.com | RSS |
-| salesforceben.com | RSS |
-| routine-automation.com/blog | RSS |
+| admin.salesforce.com | Official RSS |
+| developer.salesforce.com/blogs | Official RSS |
+| salesforcemonday.com | RSS |
+| sfdcstop.com | RSS |
+| sfdc99.com | RSS |
+| nebulaconsulting.co.uk | RSS |
 
-**Feed limits:** max 5 entries per feed; freshness window = 90 days.  
+**Feed limits:** 20 entries for official feeds, 10 for curated feeds; freshness window = 90 days.
 **Reddit guard:** skip entries where `"reddit.com" in link and "/comments/" not in link` (avoids subreddit root URLs).
 
 ---
@@ -127,7 +129,8 @@ score = min(channel_matches / MATCH_SATURATION + generic_matches * 0.05, 1.0)
 - `MATCH_SATURATION = 3` → 3 channel keyword hits = score 1.0
 - `GENERIC_SF_KEYWORDS` each contribute `+0.05`
 - YouTube items: `+0.15` boost
-- Release notes items (e.g. "Spring '26", "release notes"): `+0.30` boost for `#topic-of-the-day`
+- Mandatory official release/security items bypass the relevance threshold.
+- Within-run URL duplicates are selected by `must_post`, source priority, then channel priority.
 - `RELEVANCE_THRESHOLD = 0.25` — items below this are skipped (logged as `[SKIP 0.XX]`)
 
 ### Gemini AI Summary
@@ -165,8 +168,8 @@ Two formats are auto-detected by URL:
 
 | Cron | UTC | Warsaw (CEST) | Purpose |
 |---|---|---|---|
-| `0 8 * * 1,3,5` | 08:00 Mon/Wed/Fri | 10:00 | Main posting run |
-| `0 7 * * *` | 07:00 daily | 09:00 | Meetup/events freshness check |
+| `0 8 * * 1-5` | 08:00 weekdays | 10:00 | All channels |
+| `0 8 * * 0,6` | 08:00 weekends | 10:00 | Official sources only |
 
 **Manual trigger:** `workflow_dispatch` with optional `dry_run: true` (logs only, no posts).
 
@@ -175,16 +178,16 @@ Two formats are auto-detected by URL:
 ## Data Files
 
 ### `data/seen_ids.json`
-- Array of MD5 hashes of posted item URLs
+- IDs of successfully posted items (URL hashes for RSS; URL+label fingerprints for release resources)
 - Read with `utf-8-sig` encoding (BOM-safe, prevents crash from PowerShell-generated files)
 - Written with `utf-8` encoding (no BOM)
-- Updated at end of each run
+- Updated only after Teams returns success; failed, capped and dry-run items remain retryable
 
 ### `data/post_log.json`
 - Array of objects, most recent appended last
 - Fields: `id`, `channel`, `source`, `feed_domain`, `title`, `url`, `status` (`posted`/`failed`/`dry-run`), `relevance_score`, `suggested_comment`, `posted_at`, `error`
 - Committed back to repo by GitHub Actions after each run
-- Served to GitHub Pages dashboard via `docs/post_log.json` (copied by workflow)
+- Served with `feed_health.json` and `last_run.json` to the GitHub Pages dashboard
 
 ---
 
@@ -243,10 +246,10 @@ No API keys needed for fetching — YouTube content is consumed via public RSS, 
 |---|---|
 | Gemini quota | Hits on first article often; subsequent items use static comment. RSS summary always shown. |
 | Reddit links | Only `/comments/` URLs are valid posts; subreddit root URLs are filtered out. |
-| `MAX_PER_CHANNEL = 2` | Prevents spam if many articles pass the threshold in one run. |
+| `MAX_PER_CHANNEL = 2` | Prevents curated spam; mandatory official notices bypass it. |
 | BOM encoding | `seen_ids.json` read with `utf-8-sig` to handle files created by PowerShell. |
 | YouTube RSS | Free, no API key. Uses `youtube.com/feeds/videos.xml?channel_id=...` |
-| Dedup window | Lifetime dedup (no expiry). Reset `seen_ids.json` to `[]` to re-run on old content. |
+| Dedup window | Lifetime successful-delivery dedup. Failed/capped items retry. |
 
 ---
 

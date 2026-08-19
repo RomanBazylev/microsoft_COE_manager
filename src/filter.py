@@ -8,6 +8,7 @@ import os
 import time
 import requests
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 RELEVANCE_THRESHOLD = 0.25
 MATCH_SATURATION = 3  # 3 channel keyword matches = full relevance
@@ -73,6 +74,15 @@ CHANNEL_COMMENTS: dict[str, str] = {
     "need-help":        "💡 This might help with common issues.",
     "meetup-events":    "📅 Upcoming Salesforce event — mark your calendar!",
     "topic-of-the-day": "🔥 Interesting Salesforce topic for today.",
+}
+
+CHANNEL_PRIORITY = {
+    "salesforce-rss": 80,
+    "playground": 60,
+    "topic-of-the-day": 50,
+    "certification": 40,
+    "need-help": 30,
+    "meetup-events": 20,
 }
 
 CHANNEL_PROMPTS: dict[str, str] = {
@@ -188,7 +198,69 @@ def load_seen_ids() -> set:
 
 
 def save_seen_ids(ids: set):
-    Path("data/seen_ids.json").write_text(json.dumps(list(ids), indent=2), encoding="utf-8")
+    Path("data").mkdir(parents=True, exist_ok=True)
+    Path("data/seen_ids.json").write_text(json.dumps(sorted(ids), indent=2), encoding="utf-8")
+
+
+def deduplicate_items(items: list[dict]) -> list[dict]:
+    """Choose the deterministic highest-priority candidate for each URL."""
+    by_key: dict[str, list[dict]] = {}
+    for item in items:
+        raw_url = item.get("url", "")
+        if raw_url:
+            parts = urlsplit(raw_url)
+            query = [
+                (key, value)
+                for key, value in parse_qsl(parts.query, keep_blank_values=True)
+                if not key.casefold().startswith("utm_")
+                and key.casefold() not in {"ref", "source", "campaign"}
+            ]
+            key = urlunsplit((
+                parts.scheme.casefold(),
+                parts.netloc.casefold(),
+                parts.path.rstrip("/") or "/",
+                urlencode(query),
+                "",
+            ))
+        else:
+            key = item.get("id", "")
+        by_key.setdefault(key, []).append(item)
+
+    selected = []
+    for key in sorted(by_key):
+        candidates = by_key[key]
+        winner = max(
+            candidates,
+            key=lambda item: (
+                bool(item.get("must_post")),
+                int(item.get("source_priority", 0)),
+                CHANNEL_PRIORITY.get(item.get("channel", ""), 0),
+                item.get("title", "").casefold(),
+                item.get("id", ""),
+            ),
+        )
+        if len(candidates) > 1:
+            dropped = ", ".join(
+                sorted(i.get("channel", "?") for i in candidates if i is not winner)
+            )
+            print(f"  [DEDUP] kept {winner.get('channel')} over {dropped}: {winner.get('title', '')[:60]}")
+        selected.append(winner)
+    return selected
+
+
+def mark_delivered(results: list[dict]) -> set[str]:
+    """Persist only successful Teams deliveries; dry-runs and failures retry."""
+    delivered = {
+        result["id"]
+        for result in results
+        if result.get("status") == "posted" and result.get("id")
+    }
+    if not delivered:
+        return set()
+    seen_ids = load_seen_ids()
+    save_seen_ids(seen_ids | delivered)
+    print(f"[Filter] Marked {len(delivered)} successful deliveries as seen")
+    return delivered
 
 
 def run(items: list[dict]) -> list[dict]:
@@ -197,22 +269,17 @@ def run(items: list[dict]) -> list[dict]:
     new_items = [i for i in items if i["id"] not in seen_ids]
     print(f"[Filter] {len(new_items)} new (skipped {len(items)-len(new_items)} duplicates)")
 
-    # Within-run dedup: same URL may appear for multiple channels — keep highest-priority channel only
-    seen_urls: set[str] = set()
-    deduped: list[dict] = []
-    for i in new_items:
-        url = i.get("url", "")
-        if url and url in seen_urls:
-            print(f"  [DEDUP] {i['channel']} / {i['title'][:60]}")
-            continue
-        if url:
-            seen_urls.add(url)
-        deduped.append(i)
-    new_items = deduped
+    new_items = deduplicate_items(new_items)
 
     scored = [score_item(i) for i in new_items]
-    approved = [i for i in scored if i.get("relevance_score", 0) >= RELEVANCE_THRESHOLD]
-    rejected = [i for i in scored if i.get("relevance_score", 0) < RELEVANCE_THRESHOLD]
+    approved = [
+        i for i in scored
+        if i.get("must_post") or i.get("relevance_score", 0) >= RELEVANCE_THRESHOLD
+    ]
+    rejected = [
+        i for i in scored
+        if not i.get("must_post") and i.get("relevance_score", 0) < RELEVANCE_THRESHOLD
+    ]
     print(f"[Filter] Approved: {len(approved)}/{len(scored)} (threshold={RELEVANCE_THRESHOLD})")
     for i in rejected:
         print(f"  [SKIP {i['relevance_score']:.2f}] {i['title'][:70]}")
@@ -221,16 +288,14 @@ def run(items: list[dict]) -> list[dict]:
     print(f"[Filter] Gemini: {'enabled' if gemini_key else 'no key — using static comments'}")
 
     for i in approved:
-        print(f"  [OK   {i['relevance_score']:.2f}] {i['title'][:60]}")
+        label = "MUST" if i.get("must_post") else "OK  "
+        print(f"  [{label} {i['relevance_score']:.2f}] {i['title'][:60]}")
         if gemini_key and not _gemini_quota_hit:
             ai = _gemini_summary(i)
             if ai:
                 i["suggested_comment"] = ai
                 i["ai_summary"] = ai
                 print(f"         AI: {ai[:80]}...")
-
-    new_seen = {i["id"] for i in new_items}
-    save_seen_ids(seen_ids | new_seen)
 
     return approved
 
