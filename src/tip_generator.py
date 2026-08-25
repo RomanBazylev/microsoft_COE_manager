@@ -10,8 +10,9 @@ import os
 import re
 import html
 import time
+import email.utils
 import requests
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 GEMINI_API_URL = (
@@ -70,7 +71,8 @@ def _domain_from_url(url: str) -> str:
 
 
 TIP_USED_IDS_PATH = Path("data/tip_used_ids.json")
-TIP_DEDUPE_DAYS = 7  # don't re-use the same article as a tip card within this window
+TIP_HISTORY_DAYS = 365  # how long a used article is remembered
+TIP_REUSE_COOLDOWN_DAYS = 120  # last-resort reuse is allowed only after this long
 
 
 def _load_tip_used() -> dict:
@@ -83,14 +85,24 @@ def _load_tip_used() -> dict:
     return {}
 
 
+def _days_since(iso_date: str | None, today: date) -> int | None:
+    if not iso_date:
+        return None
+    try:
+        return (today - datetime.fromisoformat(iso_date).date()).days
+    except (TypeError, ValueError):
+        return None
+
+
 def _save_tip_used(mapping: dict) -> None:
     TIP_USED_IDS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    # Prune entries older than TIP_DEDUPE_DAYS to keep the file small
     today = datetime.now(timezone.utc).date()
-    pruned = {
-        k: v for k, v in mapping.items()
-        if (today - datetime.fromisoformat(v).date()).days < TIP_DEDUPE_DAYS
-    }
+    pruned = {}
+    for article_id, used_on in mapping.items():
+        days = _days_since(used_on, today)
+        # Keep unparseable dates: dropping them would make the article eligible again.
+        if days is None or days < TIP_HISTORY_DAYS:
+            pruned[article_id] = used_on
     TIP_USED_IDS_PATH.write_text(json.dumps(pruned, indent=2), encoding="utf-8")
 
 
@@ -103,11 +115,31 @@ def mark_tip_delivered(article_id: str) -> None:
     _save_tip_used(used)
 
 
+def _published_ts(item: dict) -> float:
+    raw = item.get("published")
+    if not raw:
+        return 0.0
+    try:
+        return email.utils.parsedate_to_datetime(raw).timestamp()
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _tip_rank(item: dict) -> tuple:
+    """Prefer RSS over YouTube, then the freshest article, then relevance."""
+    return (
+        0 if item.get("source") == "youtube" else 1,
+        _published_ts(item),
+        item.get("relevance_score", 0),
+    )
+
+
 def pick_best_article(candidates: list[dict]) -> dict | None:
     """
-    Return the highest-scoring topic-of-the-day item, preferring RSS over YouTube.
-    Skips articles already used as a tip card within TIP_DEDUPE_DAYS.
+    Return the best topic-of-the-day item that has not been used as a tip card yet.
     Accepts either a pre-filtered list of topic-of-the-day items or a mixed list.
+    Returns None when every candidate was already used recently, so a stale feed
+    cannot republish the same tip card over and over.
     """
     topic_items = [i for i in candidates if i.get("channel") == "topic-of-the-day"]
     if not topic_items:
@@ -115,17 +147,25 @@ def pick_best_article(candidates: list[dict]) -> dict | None:
 
     used = _load_tip_used()
     available = [i for i in topic_items if i.get("id", "") not in used]
-    if not available:
-        # All recent articles already used — fall back to the whole pool
-        print("[TipGen] All topic articles recently used — resetting tip dedup for this run")
-        available = topic_items
+    if available:
+        return max(available, key=_tip_rank)
 
-    # Prefer RSS (has actual article text), then higher relevance score
-    available.sort(key=lambda x: (
-        0 if x.get("source") == "youtube" else 1,
-        x.get("relevance_score", 0),
-    ), reverse=True)
-    return available[0]
+    today = datetime.now(timezone.utc).date()
+    reusable = []
+    for item in topic_items:
+        days = _days_since(used.get(item.get("id", "")), today)
+        if days is not None and days >= TIP_REUSE_COOLDOWN_DAYS:
+            reusable.append((days, item))
+    if not reusable:
+        print(
+            "[TipGen] Every topic article was already used as a tip card — "
+            "skipping tip to avoid a duplicate post"
+        )
+        return None
+
+    days, item = max(reusable, key=lambda pair: (pair[0], _tip_rank(pair[1])))
+    print(f"[TipGen] Reusing article last used {days}d ago: {item.get('title', '')[:60]}")
+    return item
 
 
 def _call_gemini(article: dict) -> dict | None:
