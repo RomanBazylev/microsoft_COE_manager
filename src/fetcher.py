@@ -3,6 +3,7 @@ fetcher.py — collects content from RSS feeds and YouTube (via free RSS).
 No API keys required — YouTube videos come via public RSS feeds.
 All secrets (only webhooks) come from environment variables (GitHub Secrets).
 """
+import email.utils
 import json
 import re
 import html
@@ -22,12 +23,21 @@ def _strip_html(text: str) -> str:
 MAX_AGE_DAYS = 90
 DEFAULT_ENTRY_LIMIT = 10
 OFFICIAL_ENTRY_LIMIT = 20
+RSS_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (compatible; Salesforce-CoE-Autoposter/1.0; "
+        "+https://github.com/RomanBazylev/microsoft_COE_manager)"
+    ),
+    "Accept": (
+        "application/rss+xml, application/atom+xml, application/xml, "
+        "text/xml, text/html;q=0.9, */*;q=0.8"
+    ),
+}
 
 # YouTube public RSS: youtube.com/feeds/videos.xml?channel_id=CHANNEL_ID
 # No API key needed — completely free.
 FEEDS = {
     "certification": [
-        "https://www.sfdc99.com/feed/",
         "https://www.salesforceben.com/feed/",
         "https://www.adminhero.com/feed/",
     ],
@@ -56,7 +66,6 @@ FEEDS = {
         "https://developer.salesforce.com/blogs/feed",  # official developer topics
         "https://www.sfdcstop.com/feeds/posts/default?alt=rss",  # Apex tutorials, LWC, Flows
         # Additional variety — practical tips & best practices
-        "https://www.sfdc99.com/feed/",                 # Apex/admin tips for beginners
         "https://nebulaconsulting.co.uk/insights/feed/", # advanced Apex patterns
     ],
 }
@@ -111,7 +120,6 @@ def is_fresh(published_str: str | None) -> bool:
     if not published_str:
         return True  # assume fresh if no date
     try:
-        import email.utils
         dt = email.utils.parsedate_to_datetime(published_str)
         cutoff = datetime.now(timezone.utc) - timedelta(days=MAX_AGE_DAYS)
         return dt > cutoff
@@ -143,7 +151,7 @@ def _route_channel(default_channel: str, text: str, metadata: dict) -> str:
     return default_channel
 
 
-def fetch_rss(channel: str, urls: list[str]) -> tuple[list[dict], list[dict]]:
+def fetch_rss(channel: str, urls: list[str], session=requests) -> tuple[list[dict], list[dict]]:
     items = []
     health = []
     for url in urls:
@@ -164,10 +172,10 @@ def fetch_rss(channel: str, urls: list[str]) -> tuple[list[dict], list[dict]]:
             "error": "",
         }
         try:
-            response = requests.get(
+            response = session.get(
                 url,
                 timeout=20,
-                headers={"User-Agent": "Salesforce-CoE-Autoposter/1.0"},
+                headers=RSS_HEADERS,
             )
             source_health["http_status"] = response.status_code
             response.raise_for_status()

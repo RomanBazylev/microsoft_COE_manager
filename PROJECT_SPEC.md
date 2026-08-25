@@ -69,7 +69,6 @@ SalesforceIntCOE/
 ### `#certification`
 | Source | Type |
 |---|---|
-| sfdc99.com | RSS |
 | salesforceben.com | RSS |
 | adminhero.com | RSS |
 | admin.salesforce.com (credential/Trailhead routing) | Official RSS |
@@ -110,10 +109,10 @@ SalesforceIntCOE/
 | developer.salesforce.com/blogs | Official RSS |
 | salesforcemonday.com | RSS |
 | sfdcstop.com | RSS |
-| sfdc99.com | RSS |
 | nebulaconsulting.co.uk | RSS |
 
 **Feed limits:** 20 entries for official feeds, 10 for curated feeds; freshness window = 90 days.
+**Request compatibility:** RSS requests use an identifiable Mozilla-compatible crawler user agent with the project URL plus RSS/XML accept headers, which Salesforce's edge protection requires for the official Admin and Developer feeds.
 **Reddit guard:** skip entries where `"reddit.com" in link and "/comments/" not in link` (avoids subreddit root URLs).
 
 ---

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 import artifacts
 import events_fetcher
+import fetcher
 import official_fetcher
 
 
@@ -34,6 +35,55 @@ RELEASE_HTML = """
 
 
 class OfficialSourceTests(unittest.TestCase):
+    def test_rss_fetch_uses_salesforce_compatible_request_headers(self):
+        feed_xml = b"""
+        <rss version="2.0"><channel><title>Salesforce Admins</title>
+          <item>
+            <title>Salesforce Release Notes</title>
+            <link>https://admin.salesforce.com/blog/example</link>
+            <description>Official release notes</description>
+          </item>
+        </channel></rss>
+        """
+
+        class Response:
+            status_code = 200
+            content = feed_xml
+
+            def raise_for_status(self):
+                return None
+
+        class Session:
+            headers = None
+
+            @classmethod
+            def get(cls, *args, **kwargs):
+                cls.headers = kwargs["headers"]
+                return Response()
+
+        items, health = fetcher.fetch_rss(
+            "salesforce-rss",
+            ["https://admin.salesforce.com/feed"],
+            session=Session,
+        )
+
+        self.assertEqual("ok", health[0]["status"])
+        self.assertEqual(1, len(items))
+        self.assertTrue(items[0]["official"])
+        self.assertTrue(items[0]["must_post"])
+        self.assertEqual("salesforce-rss", items[0]["channel"])
+        self.assertIn("Mozilla/5.0", Session.headers["User-Agent"])
+        self.assertIn("github.com/RomanBazylev/microsoft_COE_manager", Session.headers["User-Agent"])
+        self.assertIn("application/rss+xml", Session.headers["Accept"])
+
+    def test_unreliable_sfdc99_feed_is_not_configured(self):
+        configured_urls = {
+            url
+            for urls in fetcher.FEEDS.values()
+            for url in urls
+        }
+        self.assertNotIn("https://www.sfdc99.com/feed/", configured_urls)
+
     def test_release_parser_is_official_deduplicated_and_mandatory(self):
         items = official_fetcher.parse_release_resources(RELEASE_HTML)
         self.assertEqual(3, len(items))
