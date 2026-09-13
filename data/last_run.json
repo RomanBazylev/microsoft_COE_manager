@@ -1,9 +1,9 @@
 {
-  "run_at": "2026-09-12T11:47:45.181854+00:00",
+  "run_at": "2026-09-13T12:55:37.888438+00:00",
   "trigger": "schedule",
   "dry_run": false,
   "fetched": 28,
-  "approved": 7,
+  "approved": 5,
   "results": {
     "posted": 2,
     "failed": 0,
