@@ -1,11 +1,11 @@
 {
-  "run_at": "2026-10-03T12:50:44.829715+00:00",
+  "run_at": "2026-10-04T13:33:29.576336+00:00",
   "trigger": "schedule",
   "dry_run": false,
   "fetched": 28,
-  "approved": 3,
+  "approved": 1,
   "results": {
-    "posted": 2,
+    "posted": 1,
     "failed": 0,
     "dry_run": 0
   },

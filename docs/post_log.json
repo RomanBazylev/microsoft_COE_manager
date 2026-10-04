@@ -10194,5 +10194,26 @@
     "posted_at": "2026-10-03T12:50:43.808929+00:00",
     "status": "posted",
     "error": ""
+  },
+  {
+    "channel": "salesforce-rss",
+    "source": "rss",
+    "feed_domain": "salesforce.com",
+    "feed_url": "https://www.salesforce.com/blog/feed/",
+    "title": "Agentic AI and the Future of Work: What It Means for Salesforce Practitioners",
+    "url": "https://www.salesforce.com/blog/agentic-ai-and-the-future-of-work-salesforce-practitioners/",
+    "summary": "Technology is changing fast. Follow the work to see where your role goes next.",
+    "published": "Tue, 29 Sep 2026 17:38:30 +0000",
+    "id": "dca9836f4b9c2590355b478f239eff2b",
+    "must_post": false,
+    "official": true,
+    "source_priority": 90,
+    "relevance_score": 0.43,
+    "reason": "Matched 1 channel keywords, 2 generic SF keywords",
+    "suggested_comment": "📰 Latest from the Salesforce world.",
+    "ai_summary": null,
+    "posted_at": "2026-10-04T13:33:28.557607+00:00",
+    "status": "posted",
+    "error": ""
   }
 ]
