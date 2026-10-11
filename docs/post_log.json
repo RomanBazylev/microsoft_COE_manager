@@ -1,23 +1,5 @@
 [
   {
-    "channel": "certification",
-    "source": "rss",
-    "feed_domain": "salesforceben.com",
-    "feed_url": "https://www.salesforceben.com/feed/",
-    "title": "Salesforce Security Roadmap 2026: What’s Changing and How to Prepare",
-    "url": "https://www.salesforceben.com/june-2026-security-requirements-what-to-expect-and-how-to-prepare/",
-    "summary": "<p>From June 2026, Salesforce will introduce a new wave of security controls designed to strengthen protection in response to the growing number of attacks targeting Salesforce environments and their customers. In the Salesforce Documentation, this is known as Security-Related Product Updates to the",
-    "published": "Fri, 08 May 2026 10:44:46 +0000",
-    "id": "63da487cf4c3f26128d6dce098f5d1f7",
-    "relevance_score": 0.43,
-    "reason": "Matched 1 channel keywords, 2 generic SF keywords",
-    "suggested_comment": "📚 Useful resource for your certification journey!",
-    "ai_summary": null,
-    "posted_at": "2026-05-09T05:43:47.331681+00:00",
-    "status": "failed",
-    "error": "401 Client Error: Unauthorized for url: https://default8a68f26db2704ef3ae78bd695a9094.45.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/bd3438156a9848e7b6a3d108a4a6a130/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=JypImzFHu7CwfudEGh046K8luANGgxgazy9XsTSSGkI%0A"
-  },
-  {
     "channel": "playground",
     "source": "rss",
     "feed_domain": "reddit.com",
@@ -10844,6 +10826,27 @@
     "suggested_comment": "📰 Latest from the Salesforce world.",
     "ai_summary": null,
     "posted_at": "2026-10-10T14:05:25.688633+00:00",
+    "status": "posted",
+    "error": ""
+  },
+  {
+    "channel": "salesforce-rss",
+    "source": "rss",
+    "feed_domain": "salesforce.com",
+    "feed_url": "https://www.salesforce.com/blog/feed/",
+    "title": "Financial Institutions Don’t Need Another Product, They Need a Trusted Partner",
+    "url": "https://www.salesforce.com/blog/financial-institutions-need-a-trusted-partner/",
+    "summary": "The Real Problem Isn’t AI. It’s Fragmentation. Every financial institution’s technology team is carrying the same quiet weight: a sprawling stack of point solutions where each solution promises to solve one specific problem…",
+    "published": "Wed, 07 Oct 2026 15:08:54 +0000",
+    "id": "e52361358b0bcf2fd9513cccf68c189a",
+    "must_post": false,
+    "official": true,
+    "source_priority": 90,
+    "relevance_score": 0.33,
+    "reason": "Matched 1 channel keywords, 0 generic SF keywords",
+    "suggested_comment": "📰 Latest from the Salesforce world.",
+    "ai_summary": null,
+    "posted_at": "2026-10-11T14:29:15.020485+00:00",
     "status": "posted",
     "error": ""
   }
