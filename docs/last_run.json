@@ -1,18 +1,18 @@
 {
-  "run_at": "2026-10-12T17:31:38.504936+00:00",
+  "run_at": "2026-10-13T15:41:46.265456+00:00",
   "trigger": "schedule",
   "dry_run": false,
-  "fetched": 107,
-  "approved": 3,
+  "fetched": 137,
+  "approved": 12,
   "results": {
-    "posted": 3,
+    "posted": 4,
     "failed": 0,
     "dry_run": 0
   },
   "feed_health": {
-    "ok": 16,
+    "ok": 19,
     "degraded": 0,
     "empty": 0,
-    "error": 3
+    "error": 0
   }
 }
